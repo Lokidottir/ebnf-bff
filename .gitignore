@@ -3,3 +3,4 @@ ebnfgrammar_todo.ebnf
 lib/*
 *.o
 *.hi
+dist/*
