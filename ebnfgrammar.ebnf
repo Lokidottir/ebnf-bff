@@ -1,4 +1,9 @@
 (*
+Note: This was copied from the EBNF ISO
+14977, not authored by myself.
+*)
+
+(*
 The syntax of Extended BNF can be defined using
 itself. There are four parts in this example,
 the first part names the characters, the second

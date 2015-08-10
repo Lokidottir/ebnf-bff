@@ -1,2 +1,5 @@
 ebnfgrammar_todo.ebnf
 *.c
+lib/*
+*.o
+*.hi
