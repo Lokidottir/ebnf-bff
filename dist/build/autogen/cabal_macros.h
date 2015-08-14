@@ -14,12 +14,19 @@
   (major1) == 3 && (major2) <  1 || \
   (major1) == 3 && (major2) == 1 && (minor) <= 9)
 
-/* tool gcc-4.9.3 */
-#define TOOL_VERSION_gcc "4.9.3"
+/* tool alex-3.1.4 */
+#define TOOL_VERSION_alex "3.1.4"
+#define MIN_TOOL_VERSION_alex(major1,major2,minor) (\
+  (major1) <  3 || \
+  (major1) == 3 && (major2) <  1 || \
+  (major1) == 3 && (major2) == 1 && (minor) <= 4)
+
+/* tool gcc-4.9.2 */
+#define TOOL_VERSION_gcc "4.9.2"
 #define MIN_TOOL_VERSION_gcc(major1,major2,minor) (\
   (major1) <  4 || \
   (major1) == 4 && (major2) <  9 || \
-  (major1) == 4 && (major2) == 9 && (minor) <= 3)
+  (major1) == 4 && (major2) == 9 && (minor) <= 2)
 
 /* tool ghc-7.8.4 */
 #define TOOL_VERSION_ghc "7.8.4"
@@ -55,11 +62,4 @@
   (major1) <  0 || \
   (major1) == 0 && (major2) <  28 || \
   (major1) == 0 && (major2) == 28 && (minor) <= 0)
-
-/* tool strip-2.25 */
-#define TOOL_VERSION_strip "2.25"
-#define MIN_TOOL_VERSION_strip(major1,major2,minor) (\
-  (major1) <  2 || \
-  (major1) == 2 && (major2) <  25 || \
-  (major1) == 2 && (major2) == 25 && (minor) <= 0)
 

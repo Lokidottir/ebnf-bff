@@ -1,8 +1,5 @@
 import EBNF hiding (main)
-
 import System.Environment
-
-
 
 main :: IO()
 main = do
