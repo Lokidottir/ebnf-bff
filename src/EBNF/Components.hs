@@ -32,6 +32,9 @@ tabSW = do
     a <- tab
     return [a]
 
+integer :: Parser String
+integer = many1 digit
+
 -- rule: "concatenate symbol"
 concatSymbol :: Parser String
 concatSymbol = string ","
@@ -129,11 +132,32 @@ terminalCharacter = letterSW <|>
                     terminatorSymbol <|>
                     miscChar
 
+commmentlessSymbol :: Parser String
+commmentlessSymbol =
+    (syntacticException
+        terminalCharacter (letterSW
+                       <|> digitSW
+                       <|> quoteSingle
+                       <|> quoteDouble
+                       <|> commentSymbolBegin
+                       <|> commentSymbolEnd
+                       <|> specialSymbol
+                       <|> miscChar))
+    <|> metaIdentifier
+    <|> integer
+    <|> terminalString
+    <|> specialSequence
+
 -- rule: "gap free symbol"
 gaplessSymbol :: Parser String
 gaplessSymbol = do
     (syntacticException terminalCharacter (quoteSingle <|> quoteDouble)) <|>
      terminalString
+
+-- rule: "terminal string"
+terminalString :: Parser String
+terminalString = do
+    (quoteDoubleString) <|> (quoteSingleString)
 
 gapSeperator :: Parser String
 gapSeperator = spaceSW <|> tabSW <|> (string "\n") <|>
@@ -145,19 +169,19 @@ escaped = do
     character <- oneOf "\\\"0nrvtbf"
     return [escape, character]
 
+quoteDoubleString :: Parser String
 quoteDoubleString = do
     quoteDouble
-    stringContent <- many (syntacticException )
-    return stringContent
+    stringContent <- many (syntacticException terminalCharacter quoteDouble)
+    quoteDouble
+    return (concat stringContent)
 
+quoteSingleString :: Parser String
 quoteSingleString = do
     quoteSingle
-    stringContent <- manyTill (anyChar) (try quoteSingle)
-    return stringContent
-
--- rule: "terminal string"
-terminalString :: Parser String
-terminalString = (quoteDoubleString) <|> (quoteSingleString)
+    stringContent <- many (syntacticException terminalCharacter quoteSingle)
+    quoteSingle
+    return (concat stringContent)
 
 -- rule: "meta identifier character"
 metaCharacter :: Parser String
@@ -167,13 +191,12 @@ metaCharacter = letterSW <|> digitSW
 metaIdentifier :: Parser String
 metaIdentifier = do
     a <- letterSW
-    b <- concat (many metaCharacter)
-    return a ++ b
+    b <- many metaCharacter
+    return (concat (a:b))
 
--- rule: "special special sequence"
 specialSequence :: Parser String
 specialSequence = do
     specialSymbol
-    a <- concat (many (syntacticException terminalCharacter specialSymbol))
+    a <- many (syntacticException terminalCharacter specialSymbol)
     specialSymbol
-    return a
+    return (concat a)

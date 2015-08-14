@@ -3,6 +3,6 @@ ebnfgrammar_todo.ebnf
 lib/*
 *.o
 *.hi
-dist/*
+dist
 .cabal-sandbox/*
 cabal.sandbox.config
