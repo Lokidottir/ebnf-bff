@@ -21,14 +21,14 @@ primST par name = do
     text <- par
     return (SyntaxTree name text pos [])
 
+letterST :: Parser SyntaxTree
+letterST = primST letterSW "_letter_"
+
 -- string wrapped letter and digit parsers
 letterSW :: Parser String
 letterSW = do
     a <- letter
     return [a]
-
-letterST :: Parser SyntaxTree
-letterST = primST letterSW "_letter_"
 
 digitST :: Parser SyntaxTree
 digitST = primST digitSW "_digit_"
@@ -233,6 +233,7 @@ metaIdentifier = do
     b <- many metaCharacter
     return (SyntaxTree "meta identifier" "" pos (a:b))
 
+-- rule "special sequence"
 specialSequence :: Parser SyntaxTree
 specialSequence = do
     pos <- getPosition
@@ -240,3 +241,34 @@ specialSequence = do
     a <- many (syntacticException terminalCharacter specialSymbol)
     specialSymbol
     return (SyntaxTree "special sequence" "" pos a)
+
+commentSymbol :: Parser SyntaxTree
+commentSymbol = do
+    pos <- getPosition
+    child <- (bracketedComment <|> miscChar <|> commmentlessSymbol)
+    return (SyntaxTree "comment symbol" "" pos [child])
+
+-- rule: "bracketed textual comment"
+bracketedComment :: Parser SyntaxTree
+bracketedComment = do
+    pos <- getPosition
+    children <- do
+        begin <- commentSymbolBegin
+        commentText <- many commentSymbol
+        end <- commentSymbolEnd
+        return ([begin] ++ commentText ++ [end])
+    return (SyntaxTree "bracketed textual comment" "" pos children)
+
+commentSyntax :: Parser SyntaxTree
+commentSyntax = do
+    pos <- getPosition
+    children <- do
+        commentsBlockA <- many bracketedComment
+        nonCBlock <- commmentlessSymbol
+        commentsBlockB <- many bracketedComment
+        repeatedBlocks <- many (do
+            nonCBlockRep <- commmentlessSymbol
+            commentsBlockRep <- many bracketedComment
+            return (nonCBlockRep:commentsBlockRep))
+        return (commentsBlockA ++ [nonCBlock] ++ commentsBlockB ++ (concat repeatedBlocks))
+    return (SyntaxTree "syntax (comments)" "" pos children)
