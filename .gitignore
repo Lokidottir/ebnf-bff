@@ -6,3 +6,4 @@ lib/*
 dist
 .cabal-sandbox/*
 cabal.sandbox.config
+*err

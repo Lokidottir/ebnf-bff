@@ -1,6 +1,7 @@
 module EBNF.Components where
 
 import EBNF.Helper
+import EBNF.SyntaxTree
 import Text.Parsec
 import Text.Parsec.String
 import Text.Parsec.Char
@@ -11,157 +12,192 @@ import Data.List
     to a set or rules that make up an EBNF parser with Parsec
 -}
 
+{-
+
+-}
+primST :: Parser String -> String -> Parser SyntaxTree
+primST par name = do
+    pos <- getPosition
+    text <- par
+    return (SyntaxTree name text pos [])
+
 -- string wrapped letter and digit parsers
 letterSW :: Parser String
 letterSW = do
     a <- letter
     return [a]
 
+letterST :: Parser SyntaxTree
+letterST = primST letterSW "_letter_"
+
+digitST :: Parser SyntaxTree
+digitST = primST digitSW "_digit_"
+
 digitSW :: Parser String
 digitSW = do
     a <- digit
     return [a]
+
+spaceST :: Parser SyntaxTree
+spaceST = primST spaceSW "_space_"
 
 spaceSW :: Parser String
 spaceSW = do
     a <- space
     return [a]
 
+tabST :: Parser SyntaxTree
+tabST = primST (string "\t") "_tab_"
+
 tabSW :: Parser String
 tabSW = do
     a <- tab
     return [a]
 
-integer :: Parser String
-integer = many1 digit
+integer :: Parser SyntaxTree
+integer = primST (many1 digit) "integer"
 
 -- rule: "concatenate symbol"
-concatSymbol :: Parser String
-concatSymbol = string ","
+concatSymbol :: Parser SyntaxTree
+concatSymbol = primST (string ",") "concatenate symbol"
 
 -- rule: "defining symbol"
-defineSymbol :: Parser String
-defineSymbol = string "="
+defineSymbol :: Parser SyntaxTree
+defineSymbol = primST (string "=") "defining symbol"
 
 -- rule: "definition separator symbol"
-alternationSymbol :: Parser String
-alternationSymbol = string "|" <|> string "/" <|> string "!"
+alternationSymbol :: Parser SyntaxTree
+alternationSymbol = primST (string "|" <|> string "/" <|> string "!") "definition separator symbol"
 
 -- rule: "start comment symbol"
-commentSymbolBegin :: Parser String
-commentSymbolBegin = string "(*"
+commentSymbolBegin :: Parser SyntaxTree
+commentSymbolBegin = primST (string "(*") "start comment symbol"
 
 -- rule: "end comment symbol"
-commentSymbolEnd :: Parser String
-commentSymbolEnd = string "*)"
+commentSymbolEnd :: Parser SyntaxTree
+commentSymbolEnd = primST (string "*)") "end comment symbol"
 
 -- rule: "start group symbol"
-groupSymbolBegin :: Parser String
-groupSymbolBegin = string "("
+groupSymbolBegin :: Parser SyntaxTree
+groupSymbolBegin = primST (string "(") "start group symbol"
 
 -- rule: "end group symbol"
-groupSymbolEnd :: Parser String
-groupSymbolEnd = string ")"
+groupSymbolEnd :: Parser SyntaxTree
+groupSymbolEnd = primST (string ")") "end group symbol"
 
 -- rule: "start option symbol"
-optionSymbolBegin :: Parser String
-optionSymbolBegin = string "[" <|> string "(/"
+optionSymbolBegin :: Parser SyntaxTree
+optionSymbolBegin = primST (string "[" <|> string "(/") "start option symbol"
 
 -- rule: "end option symbol"
-optionSymbolEnd :: Parser String
-optionSymbolEnd = string "]" <|> string "/)"
+optionSymbolEnd :: Parser SyntaxTree
+optionSymbolEnd = primST (string "]" <|> string "/)")  "end option symbol"
 
 -- rule: "start repeat symbol"
-repeatSymbolBegin :: Parser String
-repeatSymbolBegin = string "{" <|> string "(:"
+repeatSymbolBegin :: Parser SyntaxTree
+repeatSymbolBegin = primST (string "{" <|> string "(:") "start repeat symbol"
 
 -- rule: "end repeat symbol"
-repeatSymbolEnd :: Parser String
-repeatSymbolEnd = string "}" <|> string ":)"
+repeatSymbolEnd :: Parser SyntaxTree
+repeatSymbolEnd = primST (string "}" <|> string ":)") "end repeat symbol"
 
 -- rule: "except symbol"
-exceptSymbol :: Parser String
-exceptSymbol = string "-"
+exceptSymbol :: Parser SyntaxTree
+exceptSymbol = primST (string "-") "except symbol"
 
 -- rule: "first quote symbol"
-quoteSingle :: Parser String
-quoteSingle = string "'"
+quoteSingle :: Parser SyntaxTree
+quoteSingle = primST (string "'") "first quote symbol"
 
 -- rule: "second quote symbol"
-quoteDouble :: Parser String
-quoteDouble = string "\""
+quoteDouble :: Parser SyntaxTree
+quoteDouble = primST (string "\"") "second quote symbol"
 
 -- rule: "repetition symbol"
-repetitionSymbol :: Parser String
-repetitionSymbol = string "*"
+repetitionSymbol :: Parser SyntaxTree
+repetitionSymbol = primST (string "*") "repetition symbol"
 
 -- rule: "special sequence symbol"
-specialSymbol :: Parser String
-specialSymbol = string "?"
+specialSymbol :: Parser SyntaxTree
+specialSymbol = primST (string "?") "special sequence symbol"
 
 -- rule: "terminator symbol"
-terminatorSymbol :: Parser String
-terminatorSymbol = string ";" <|> string "."
+terminatorSymbol :: Parser SyntaxTree
+terminatorSymbol = primST (string ";" <|> string ".") "terminator symbol"
 
 -- rule: "other character"
-miscChar :: Parser String
-miscChar = do
+miscCharSW :: Parser String
+miscCharSW = do
     a <- oneOf " :+_%@&#$<>\\^`~"
     return [a]
 
--- rule: "terminal character"
-terminalCharacter :: Parser String
-terminalCharacter = letterSW <|>
-                    digitSW  <|>
-                    concatSymbol <|>
-                    defineSymbol <|>
-                    alternationSymbol <|>
-                    commentSymbolBegin <|>
-                    commentSymbolEnd <|>
-                    groupSymbolBegin <|>
-                    groupSymbolBegin <|>
-                    optionSymbolBegin <|>
-                    optionSymbolEnd <|>
-                    repeatSymbolBegin <|>
-                    repeatSymbolEnd <|>
-                    exceptSymbol <|>
-                    quoteSingle <|>
-                    repetitionSymbol <|>
-                    quoteDouble <|>
-                    specialSymbol <|>
-                    terminatorSymbol <|>
-                    miscChar
+miscChar :: Parser SyntaxTree
+miscChar = primST miscCharSW "_other character_"
 
-commmentlessSymbol :: Parser String
-commmentlessSymbol =
-    (syntacticException
-        terminalCharacter (letterSW
-                       <|> digitSW
-                       <|> quoteSingle
-                       <|> quoteDouble
-                       <|> commentSymbolBegin
-                       <|> commentSymbolEnd
-                       <|> specialSymbol
-                       <|> miscChar))
-    <|> metaIdentifier
-    <|> integer
-    <|> terminalString
-    <|> specialSequence
+-- rule: "terminal character"
+terminalCharacter :: Parser SyntaxTree
+terminalCharacter = do
+    pos <- getPosition
+    child <- (letterST
+          <|> digitST
+          <|> concatSymbol
+          <|> defineSymbol
+          <|> alternationSymbol
+          <|> commentSymbolBegin
+          <|> commentSymbolEnd
+          <|> groupSymbolBegin
+          <|> groupSymbolBegin
+          <|> optionSymbolBegin
+          <|> optionSymbolEnd
+          <|> repeatSymbolBegin
+          <|> repeatSymbolEnd
+          <|> exceptSymbol
+          <|> quoteSingle
+          <|> repetitionSymbol
+          <|> quoteDouble
+          <|> specialSymbol
+          <|> terminatorSymbol
+          <|> miscChar)
+    return (SyntaxTree "terminal character" "" pos [child])
+
+
+commmentlessSymbol :: Parser SyntaxTree
+commmentlessSymbol = do
+    pos <- getPosition
+    child <- ((syntacticException
+               terminalCharacter (letterST
+                              <|> digitST
+                              <|> quoteSingle
+                              <|> quoteDouble
+                              <|> commentSymbolBegin
+                              <|> commentSymbolEnd
+                              <|> specialSymbol
+                              <|> miscChar))
+             <|> metaIdentifier
+             <|> integer
+             <|> terminalString
+             <|> specialSequence)
+    return (SyntaxTree "commentless symbol" "" pos [child])
 
 -- rule: "gap free symbol"
-gaplessSymbol :: Parser String
+gaplessSymbol :: Parser SyntaxTree
 gaplessSymbol = do
-    (syntacticException terminalCharacter (quoteSingle <|> quoteDouble)) <|>
-     terminalString
+    pos <- getPosition
+    child <- ((syntacticException terminalCharacter (quoteSingle <|> quoteDouble))
+             <|> terminalString)
+    return (SyntaxTree "gap free symbol" "" pos [child])
+
 
 -- rule: "terminal string"
-terminalString :: Parser String
+terminalString :: Parser SyntaxTree
 terminalString = do
-    (quoteDoubleString) <|> (quoteSingleString)
+    pos <- getPosition
+    child <- ((quoteDoubleString) <|> (quoteSingleString))
+    return (SyntaxTree "terminal string" "" pos [child])
 
-gapSeperator :: Parser String
-gapSeperator = spaceSW <|> tabSW <|> (string "\n") <|>
-               (string "\v") <|> (string "\f")
+gapSeperator :: Parser SyntaxTree
+gapSeperator = primST (spaceSW <|> tabSW <|> (string "\n") <|>
+                        (string "\v") <|> (string "\f")) "gap separator"
 
 escaped :: Parser String
 escaped = do
@@ -169,34 +205,38 @@ escaped = do
     character <- oneOf "\\\"0nrvtbf"
     return [escape, character]
 
-quoteDoubleString :: Parser String
+quoteDoubleString :: Parser SyntaxTree
 quoteDoubleString = do
+    pos <- getPosition
     quoteDouble
     stringContent <- many (syntacticException terminalCharacter quoteDouble)
     quoteDouble
-    return (concat stringContent)
+    return (SyntaxTree "_terminal string_" "" pos stringContent)
 
-quoteSingleString :: Parser String
+quoteSingleString :: Parser SyntaxTree
 quoteSingleString = do
+    pos <- getPosition
     quoteSingle
     stringContent <- many (syntacticException terminalCharacter quoteSingle)
     quoteSingle
-    return (concat stringContent)
+    return (SyntaxTree "_terminal string_" "" pos stringContent)
 
 -- rule: "meta identifier character"
-metaCharacter :: Parser String
-metaCharacter = letterSW <|> digitSW
+metaCharacter :: Parser SyntaxTree
+metaCharacter = primST (letterSW <|> digitSW) "_meta identifier character_"
 
 -- rule: "meta identifier"
-metaIdentifier :: Parser String
+metaIdentifier :: Parser SyntaxTree
 metaIdentifier = do
-    a <- letterSW
+    pos <- getPosition
+    a <- letterST
     b <- many metaCharacter
-    return (concat (a:b))
+    return (SyntaxTree "meta identifier" "" pos (a:b))
 
-specialSequence :: Parser String
+specialSequence :: Parser SyntaxTree
 specialSequence = do
+    pos <- getPosition
     specialSymbol
     a <- many (syntacticException terminalCharacter specialSymbol)
     specialSymbol
-    return (concat a)
+    return (SyntaxTree "special sequence" "" pos a)

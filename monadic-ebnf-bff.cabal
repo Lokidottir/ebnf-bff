@@ -3,7 +3,7 @@
 
 name:                monadic-ebnf-bff
 version:             0.1.0.0
-synopsis:            A Haskell library & program that builds parsers from ISO EBNF using Parsec
+synopsis:            A library & program that builds parsers from ISO EBNF using Parsec
 -- description:
 license:             MIT
 license-file:        LICENSE
@@ -23,7 +23,7 @@ library
                        parsec >=3.1 && <3.2
   hs-source-dirs:      src
   default-language:    Haskell2010
-  -- ghc-options: -Wall
+  ghc-options: -O2
 
 executable ebnf-parse
   build-depends:       base >=4.7 && <4.8,

@@ -2,44 +2,65 @@ module EBNF.SyntaxTree where
 {-
     Syntax Tree module for data type and related functions
 -}
+import EBNF.Helper
 import Text.Parsec.Pos
+import Data.List
+import Data.Tuple
+import Data.Ord
 
 data SyntaxTree = SyntaxTree {
                  identifier :: String,
                  content    :: String,
                  position   :: SourcePos,
                  children   :: [SyntaxTree]
-                 } deriving (Show, Eq, Ord)
+                 } deriving (Show, Eq)
 
-append :: SyntaxTree -> SyntaxTree -> SyntaxTree
-append st st' = SyntaxTree (identifier st)
+instance Ord SyntaxTree where
+    compare (SyntaxTree _ _ pos _) (SyntaxTree _ _ pos' _) = compare pos pos'
+
+{-|
+    inserts a syntax tree as a child, list is sorted by source code
+    position
+-}
+insert :: SyntaxTree -> SyntaxTree -> SyntaxTree
+insert st st' = SyntaxTree (identifier st)
                            (content st)
                            (position st)
-                           ((children st) ++ [st'])
+                           (insertWhere (\a -> a > st') st' (children st))
 
+{-|
+    removes any children of `st` that equal `st'`
+-}
 remove :: SyntaxTree -> SyntaxTree -> SyntaxTree
 remove st st' = SyntaxTree (identifier st)
                            (content st)
                            (position st)
                            (filter (\a -> a /= st') (children st))
 
-{-
-    prune will remove any children of `tree` that satisfy `predicate`
+{-|
+    the content of the syntax tree is merged with it's parent
+    if the predicate is met.
+-}
+collapse :: (SyntaxTree -> Bool) -> SyntaxTree -> SyntaxTree
+collapse predicate (SyntaxTree i c p ch) =
+    (SyntaxTree i c' p ch')
+        where
+            ch' = map (collapse predicate) ch
+            c' = concat (map content ch')
+
+{-|
+    prune will remove any children of `tree` that satisfy `predicate`,
     recursively
 -}
 prune :: (SyntaxTree -> Bool) -> SyntaxTree -> SyntaxTree
-prune predicate tree = SyntaxTree (identifier tree)
-                                  (content tree)
-                                  (position tree)
-                                  (map (prune predicate) (filter (notF predicate) (children tree)))
+prune predicate (SyntaxTree i c p ch) =
+    SyntaxTree i c p (map (prune predicate) (filter (not . predicate) ch))
 
-notF :: (a -> Bool) -> a -> Bool
-notF f a = not (f a)
-
-{-
-    pruneUnderscored will prune any children of `st` whose identifier
-    begins with an underscore. might be useful for preventing syntax
-    trees from being polluted by base cases of single characters.
+{-|
+    prune any children of `st` whose identifier begins with an underscore.
+    might be useful for preventing syntax trees from being polluted by
+    base cases of single characters by annotating the EBNF definition of
+    single-char base cases such as single letters as `_letters_ = ...`
 -}
 pruneUnderscored :: SyntaxTree -> SyntaxTree
-pruneUnderscored st = prune (\a -> (head (identifier a) == '_')) st
+pruneUnderscored st = prune (\a -> ((head (identifier a)) == '_')) st
