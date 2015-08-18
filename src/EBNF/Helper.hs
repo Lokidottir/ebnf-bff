@@ -6,7 +6,7 @@ import Text.Parsec.Char
 import Data.List
 
 --syntacticException :: a -> b -> GenParser Char st c
-syntacticException factor term = do
+syntacticExceptionCombinator factor term = do
     notFollowedBy term
     factor
 

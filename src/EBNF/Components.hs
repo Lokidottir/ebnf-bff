@@ -164,7 +164,7 @@ terminalCharacter = do
 commmentlessSymbol :: Parser SyntaxTree
 commmentlessSymbol = do
     pos <- getPosition
-    child <- ((syntacticException
+    child <- ((syntacticExceptionCombinator
                terminalCharacter (letterST
                               <|> digitST
                               <|> quoteSingle
@@ -183,7 +183,7 @@ commmentlessSymbol = do
 gaplessSymbol :: Parser SyntaxTree
 gaplessSymbol = do
     pos <- getPosition
-    child <- ((syntacticException terminalCharacter (quoteSingle <|> quoteDouble))
+    child <- ((syntacticExceptionCombinator terminalCharacter (quoteSingle <|> quoteDouble))
              <|> terminalString)
     return (SyntaxTree "gap free symbol" "" pos [child])
 
@@ -209,7 +209,7 @@ quoteDoubleString :: Parser SyntaxTree
 quoteDoubleString = do
     pos <- getPosition
     quoteDouble
-    stringContent <- many (syntacticException terminalCharacter quoteDouble)
+    stringContent <- many (syntacticExceptionCombinator terminalCharacter quoteDouble)
     quoteDouble
     return (SyntaxTree "_terminal string_" "" pos stringContent)
 
@@ -217,7 +217,7 @@ quoteSingleString :: Parser SyntaxTree
 quoteSingleString = do
     pos <- getPosition
     quoteSingle
-    stringContent <- many (syntacticException terminalCharacter quoteSingle)
+    stringContent <- many (syntacticExceptionCombinator terminalCharacter quoteSingle)
     quoteSingle
     return (SyntaxTree "_terminal string_" "" pos stringContent)
 
@@ -238,7 +238,7 @@ specialSequence :: Parser SyntaxTree
 specialSequence = do
     pos <- getPosition
     specialSymbol
-    a <- many (syntacticException terminalCharacter specialSymbol)
+    a <- many (syntacticExceptionCombinator terminalCharacter specialSymbol)
     specialSymbol
     return (SyntaxTree "special sequence" "" pos a)
 

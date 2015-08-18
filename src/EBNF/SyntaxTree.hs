@@ -64,3 +64,7 @@ prune predicate (SyntaxTree i c p ch) =
 -}
 pruneUnderscored :: SyntaxTree -> SyntaxTree
 pruneUnderscored st = prune (\a -> ((head (identifier a)) == '_')) st
+
+isTerminal :: SyntaxTree -> Bool
+isTerminal (SyntaxTree _ _ _ []) = True
+isTerminal (SyntaxTree _ _ _ _)  = False
