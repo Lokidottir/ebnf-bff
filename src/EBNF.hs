@@ -1,7 +1,6 @@
 module EBNF where
 
-import EBNF.Components
-import EBNF.Structure
+import EBNF.Informal (syntax)
 
 main :: IO()
 main = do

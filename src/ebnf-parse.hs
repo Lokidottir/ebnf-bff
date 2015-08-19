@@ -1,8 +1,12 @@
 import EBNF hiding (main)
+import EBNF.Informal (syntax)
+import Text.Parsec
 import System.Environment
 
 main :: IO()
 main = do
     args <- getArgs
-    mapM putStrLn args
-    putStrLn "this program is queer"
+    fileContents <- readFile (args !! 0)
+    case (parse syntax (args !! 0) fileContents) of
+        Left err -> print err
+        Right st -> print st

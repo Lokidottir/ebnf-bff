@@ -8,9 +8,12 @@ import Data.List
 import Data.Tuple
 import Data.Ord
 
+type Identifier = String
+type Content = String
+
 data SyntaxTree = SyntaxTree {
-                 identifier :: String,
-                 content    :: String,
+                 identifier :: Identifier,
+                 content    :: Content,
                  position   :: SourcePos,
                  children   :: [SyntaxTree]
                  } deriving (Show, Eq)
@@ -65,6 +68,10 @@ prune predicate (SyntaxTree i c p ch) =
 pruneUnderscored :: SyntaxTree -> SyntaxTree
 pruneUnderscored st = prune (\a -> ((head (identifier a)) == '_')) st
 
+{-
+pruneIdentifier :: SyntaxTree -> Identifier -> SyntaxTree
+pruneIdentifier st identifier = prune (\s -> ) st
+-}
 isTerminal :: SyntaxTree -> Bool
 isTerminal (SyntaxTree _ _ _ []) = True
 isTerminal (SyntaxTree _ _ _ _)  = False
