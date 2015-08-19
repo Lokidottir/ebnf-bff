@@ -1,0 +1,232 @@
+module EBNF.Informal where
+
+import EBNF.Helper
+import EBNF.SyntaxTree
+import Text.Parsec
+import Text.Parsec.String
+import Text.Parsec.Char
+import Data.List
+
+{-
+    An implementation of an EBNF parser from the ISO EBNF informal
+    definitions.
+-}
+
+primST :: Parser String -> String -> Parser SyntaxTree
+primST par name = do
+    pos <- getPosition
+    text <- par
+    return (SyntaxTree name text pos [])
+
+{-|
+    Syntax parser, parses an entire syntax
+-}
+syntax :: Parser SyntaxTree
+syntax = do
+    pos <- getPosition
+    ch <- many1 syntaxRule
+    return (SyntaxTree "syntax" "" pos ch)
+
+{-|
+    Syntax rule parser, parses a single syntax rule
+-}
+syntaxRule :: Parser SyntaxTree
+syntaxRule = do
+    pos <- getPosition
+    ch <- do
+        blPre <- irrelevent
+        meta <- metaIdentifier
+        blA <- irrelevent
+        eq <- primST (string "=") "defining symbol"
+        blB <- irrelevent
+        defL <- definitionsList
+        blC <- irrelevent
+        ter <- primST (string ";" <|> string ".") "terminator symbol"
+        blPost <- irrelevent
+        return [meta, blA, eq, blB, defL, blC, ter]
+    return (SyntaxTree "syntax rule" "" pos ch)
+
+definitionsList :: Parser SyntaxTree
+definitionsList = do
+    pos <- getPosition
+    defA <- singleDefinition
+    list <- many (do
+        primST (string "|" <|> string "!" <|> string "/") "definition separator symbol"
+        defB <- singleDefinition
+        return defB
+        )
+    return (SyntaxTree "definitions list" "" pos (defA:list))
+
+singleDefinition :: Parser SyntaxTree
+singleDefinition = do
+    pos <- getPosition
+    blPre <- irrelevent
+    termA <- syntacticTerm
+    list <- many (do
+        blInListA <- irrelevent
+        concatSym <- primST (string ",") "concatenate symbol"
+        blInListB <- irrelevent
+        termInList <- syntacticTerm
+        return [blInListA, concatSym, blInListB, termInList])
+    blPost <- irrelevent
+    return (SyntaxTree "single definition" "" pos ([blPre, termA] ++ (concat list) ++ [blPost]))
+
+syntacticTerm :: Parser SyntaxTree
+syntacticTerm = do
+    pos <- getPosition
+    blPre <- irrelevent
+    factor <- syntacticFactor
+    exceptBl <- option [] (do
+        blInListA <- irrelevent
+        exceptSym <- primST (string "-") "except symbol"
+        blInListB <- irrelevent
+        exception <- syntacticException
+        return [blInListA, exceptSym, blInListB, exception]
+        )
+    blPost <- irrelevent
+    return (SyntaxTree "syntactic term" "" pos ([blPre, factor] ++ exceptBl ++ [blPost]))
+
+{-|
+    A syntactic exception is a syntactic factor that is checked for
+    self-reference in this implementation.
+-}
+syntacticException :: Parser SyntaxTree
+syntacticException = syntacticFactor
+
+syntacticFactor :: Parser SyntaxTree
+syntacticFactor = do
+    pos <- getPosition
+    blPre <- irrelevent
+    repeatBlock <- option [] (do
+        repeatSym <- primST (string "*") "repetition symbol"
+        blInListA <- irrelevent
+        integer <- primST (many1 digit) "integer"
+        return [repeatSym, blInListA, integer])
+    blA <- irrelevent
+    prim <- syntacticPrimary
+    blPost <- irrelevent
+    return (SyntaxTree "syntactic factor" "" pos ((blPre:repeatBlock) ++ [blA, prim, blPost]))
+
+{-|
+
+-}
+syntacticPrimary :: Parser SyntaxTree
+syntacticPrimary = do
+    pos <- getPosition
+    blPre <- irrelevent
+    ch <- optionalSequence
+      <|> repeatedSequence
+      <|> specialSequence
+      <|> groupedSequence
+      <|> metaIdentifier
+      <|> terminalString
+      <|> emptySequence
+    return (SyntaxTree "syntactic primary" "" pos [ch])
+
+emptySequence :: Parser SyntaxTree
+emptySequence = nullParser
+
+optionalSequence :: Parser SyntaxTree
+optionalSequence = do
+    pos <- getPosition
+    string "[" <|> string "(/"
+    block <- definitionsList
+    string "]" <|> string "/)"
+    return (SyntaxTree "optional sequence" "" pos [block])
+
+repeatedSequence :: Parser SyntaxTree
+repeatedSequence = do
+    pos <- getPosition
+    string "(:" <|> string "{"
+    block <- definitionsList
+    string ":)" <|> string "}"
+    return (SyntaxTree "repeated sequence" "" pos [block])
+
+groupedSequence :: Parser SyntaxTree
+groupedSequence = do
+    pos <- getPosition
+    string "("
+    block <- definitionsList
+    string ")"
+    return (SyntaxTree "grouped sequence" "" pos [block])
+
+terminalString :: Parser SyntaxTree
+terminalString = do
+    pos <- getPosition
+    termstr <- (quotedString '"') <|> (quotedString '\'')
+    return (SyntaxTree "terminal string" termstr pos [])
+
+specialSequence :: Parser SyntaxTree
+specialSequence = do
+    pos <- getPosition
+    specialSeq <- quotedString '?'
+    return (SyntaxTree "special sequence" specialSeq pos [])
+
+quotedString :: Char -> Parser String
+quotedString quoter = do
+    char quoter
+    cont <- many (syntacticExceptionCombinator anyChar (syntacticExceptionCombinator (string [quoter]) (escapedChar quoter)))
+    char quoter
+    return cont
+
+escapedChar :: Char -> Parser String
+escapedChar c = do
+    esc <- many (string "\\\\")
+    ch <- string (['\\', c])
+    return ((concat esc) ++ ch)
+
+metaIdentifier :: Parser SyntaxTree
+metaIdentifier = do
+    pos <- getPosition
+    ident <- (do
+        h <- letter <|> char '_'
+        t <- many (letter <|> space <|> digit <|> (char '_'))
+        return (h:t))
+    return (SyntaxTree "meta identifier" ident pos [])
+
+
+{-|
+    Parser for irrelevent data, things like whitespace and comments. still
+    parsed and added to the tree but grouped together
+-}
+irrelevent :: Parser SyntaxTree
+irrelevent = do
+    pos <- getPosition
+    ch <- many (comment <|> whitespaceST <|> nullParser)
+    return (SyntaxTree "irrelevent" "" pos ch)
+
+nullParser :: Parser SyntaxTree
+nullParser = do
+    pos <- getPosition
+    return (SyntaxTree "null" "" pos [])
+
+comment :: Parser SyntaxTree
+comment = do
+    pos <- getPosition
+    string "(*"
+    ch <- many commentSymbol
+    string "*)"
+    return (SyntaxTree "comment" "" pos ch)
+
+commentSymbol :: Parser SyntaxTree
+commentSymbol = do
+    pos <- getPosition
+    ch <- comment <|> terminalString <|> specialSequence <|> commentCharacterST
+    return (SyntaxTree "comment symbol" "" pos [ch])
+
+commentCharacterST :: Parser SyntaxTree
+commentCharacterST = do
+    pos <- getPosition
+    ch <- manyTill anyChar (try (string "*)"))
+    return (SyntaxTree "comment character" ch pos [])
+
+whitespaceST :: Parser SyntaxTree
+whitespaceST = do
+    pos <- getPosition
+    ch <- string " " <|> string "\n" <|> string "\f" <|> string "\v" <|> string "\t"
+    return (SyntaxTree "whitespace" ch pos [])
+
+anyCharSW :: Parser String
+anyCharSW = do
+    c <- anyChar
+    return [c]

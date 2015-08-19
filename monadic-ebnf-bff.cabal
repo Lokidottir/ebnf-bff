@@ -18,7 +18,8 @@ cabal-version:       >=1.10
 library
   exposed-modules:     EBNF,
                        EBNF.Informal,
-                       EBNF.SyntaxTree
+                       EBNF.SyntaxTree,
+                       EBNF.Helper
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8,
