@@ -15,16 +15,16 @@ stated in a comment but not formally defined.
 *)
 syntax = syntax rule, {syntax rule};
 syntax rule
-= meta identifier, ’=’, definitions list, ’;’
+= meta identifier, '=', definitions list, ';'
 (* A <syntax rule> defines the sequences of
 symbols represented by a <meta identifier> *);
 definitions list
-= single definition, {’|’, single definition}
+= single definition, {'|', single definition}
 (* | separates alternative
 <single definitions> *);
-single definition = term, {’,’, term}
+single definition = term, {',', term}
 (* , separates successive <terms> *);
-term = factor, [’-’, exception]
+term = factor, ['-', exception]
 (* A <term> represents any sequence of symbols
 that is defined by the <factor> but
 not defined by the <exception> *);
@@ -32,7 +32,7 @@ exception = factor
 (* A <factor> may be used as an <exception>
 if it could be replaced by a <factor>
 containing no <meta identifiers> *);
-factor = [integer, ’*’], primary
+factor = [integer, '*'], primary
 (* The <integer> specifies the number of
 repetitions of the <primary> *);
 primary
@@ -40,29 +40,29 @@ primary
 | special sequence | grouped sequence
 | meta identifier | terminal string | empty;
 empty = ;
-optional sequence = ’[’, definitions list, ’]’
+optional sequence = '[', definitions list, ']'
 (* The brackets [ and ] enclose symbols
 which are optional *);
-repeated sequence = ’{’, definitions list, ’}’
+repeated sequence = '{', definitions list, '}'
 (* The brackets { and } enclose symbols
 which may be repeated any number of times *);
-grouped sequence = ’(’, definitions list, ’)’
+grouped sequence = '(', definitions list, ')'
 (* The brackets ( and ) allow any
 <definitions list> to be a <primary> *);
 terminal string
-= "’", character - "’", {character - "’"}, "’"
-| ’"’, character - ’"’, {character - ’"’}, ’"’
+= "'", character - "'", {character - "'"}, "'"
+| '"', character - '"', {character - '"'}, '"'
 (* A <terminal string> represents the
-<characters> between the quote symbols’_’ or "_" *);
+<characters> between the quote symbols'_' or "_" *);
 meta identifier = letter, {letter | decimal digit}
 (* A <meta identifier> is the name of a
 syntactic element of the language being
 defined *);
 integer = decimal digit, {decimal digit};
-special sequence = ’?’, {character - ’?’}, ’?’
+special sequence = '?', {character - '?'}, '?'
 (* The meaning of a <special sequence> is not
 defined in the standard metalanguage. *);
-comment = ’(*’, {comment symbol}, ’*)’
+comment = '(*', {comment symbol}, '*)'
 (* A comment is allowed anywhere outside a
 <terminal string>, <meta identifier>,
 <integer> or <special sequence> *);

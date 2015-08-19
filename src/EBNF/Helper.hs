@@ -7,7 +7,7 @@ import Data.List
 
 --syntacticException :: a -> b -> GenParser Char st c
 syntacticExceptionCombinator factor term = do
-    notFollowedBy term
+    notFollowedBy (try term)
     factor
 
 betweenSame c = between c c

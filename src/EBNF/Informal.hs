@@ -192,7 +192,7 @@ metaIdentifier = do
 irrelevent :: Parser SyntaxTree
 irrelevent = do
     pos <- getPosition
-    ch <- many (comment <|> whitespaceST <|> nullParser)
+    ch <- many (comment <|> whitespaceST)
     return (SyntaxTree "irrelevent" "" pos ch)
 
 nullParser :: Parser SyntaxTree
@@ -204,9 +204,8 @@ comment :: Parser SyntaxTree
 comment = do
     pos <- getPosition
     string "(*"
-    ch <- many commentSymbol
-    string "*)"
-    return (SyntaxTree "comment" "" pos ch)
+    ch <- manyTill anyCharSW (try (string "*)"))
+    return (SyntaxTree "comment" (concat ch) pos [])
 
 commentSymbol :: Parser SyntaxTree
 commentSymbol = do
@@ -217,7 +216,7 @@ commentSymbol = do
 commentCharacterST :: Parser SyntaxTree
 commentCharacterST = do
     pos <- getPosition
-    ch <- manyTill anyChar (try (string "*)"))
+    ch <- manyTill anyChar (eofStr <|> (tryRS(string "*)")))
     return (SyntaxTree "comment character" ch pos [])
 
 whitespaceST :: Parser SyntaxTree
@@ -230,3 +229,13 @@ anyCharSW :: Parser String
 anyCharSW = do
     c <- anyChar
     return [c]
+
+tryRS :: Parser a -> Parser String
+tryRS par = do
+    try par
+    return ""
+
+eofStr :: Parser String
+eofStr = do
+    try eof
+    return ""

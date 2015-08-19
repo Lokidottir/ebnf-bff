@@ -7,19 +7,32 @@ import Text.Parsec.Pos
 import Data.List
 import Data.Tuple
 import Data.Ord
+import Data.Aeson.Types
+import Data.Text (pack)
 
 type Identifier = String
 type Content = String
 
 data SyntaxTree = SyntaxTree {
-                 identifier :: Identifier,
-                 content    :: Content,
-                 position   :: SourcePos,
-                 children   :: [SyntaxTree]
+                 identifier :: !Identifier,
+                 content    :: !Content,
+                 position   :: !SourcePos,
+                 children   :: ![SyntaxTree]
                  } deriving (Show, Eq)
 
 instance Ord SyntaxTree where
     compare (SyntaxTree _ _ pos _) (SyntaxTree _ _ pos' _) = compare pos pos'
+
+instance ToJSON SyntaxTree where
+    toJSON (SyntaxTree i c p ch) = (object [(pack "identifier") .= i,
+                                            (pack "content")    .= c,
+                                            (pack "position")   .= (toJSON p),
+                                            (pack "children")   .= (map (toJSON) ch)])
+
+instance ToJSON SourcePos where
+    toJSON pos = (object [(pack "name") .= (sourceName pos),
+                          (pack "line") .= (sourceLine pos),
+                          (pack "col")  .= (sourceColumn pos)])
 
 {-|
     inserts a syntax tree as a child, list is sorted by source code
