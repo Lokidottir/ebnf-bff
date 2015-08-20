@@ -1,0 +1,11 @@
+#Travis CI build & test script
+
+language: haskell
+
+ghc: 7.8
+
+script:
+    - cabal configure
+    - cabal install
+    - cabal run ebnf-parse ebnfgrammar.ebnf
+    - cat out.json

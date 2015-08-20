@@ -29,6 +29,7 @@ instance ToJSON SyntaxTree where
                                             (pack "position")   .= (toJSON p),
                                             (pack "children")   .= (map (toJSON) ch)])
 
+
 instance ToJSON SourcePos where
     toJSON pos = (object [(pack "name") .= (sourceName pos),
                           (pack "line") .= (sourceLine pos),
