@@ -1,12 +1,3 @@
-# monadic-ebnf-bff ![](https://travis-ci.org/Lokidottir/monadic-ebnf-bff.svg)
-
-Monadic parsing & EBNF, BFFs!
-
-Still being developed, though `ebnf-parse <filename>` will output an AST in JSON
-format to `out.json` if the file is a valid EBNF grammar.
-
-help text:
-```
 ebnf-parse written by fionan haralddottir, available under the MIT licence.
 this program is part of the monadic-ebnf-bff cabal package
 
@@ -31,4 +22,3 @@ Flags:
                                      plaintext
     --prune-ids=[comma delim list] | removes any subtrees from the tree that
                                      have an identifier from the given list
-```
