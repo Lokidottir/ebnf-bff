@@ -2,6 +2,7 @@ import EBNF hiding (main)
 import EBNF.Informal (syntax)
 import EBNF.SyntaxTree
 import Text.Parsec
+import Data.List
 import Data.Aeson
 import Data.Aeson.Encode
 import qualified Data.ByteString.Lazy as BS
@@ -12,15 +13,17 @@ transforms = prune (\a -> (identifier a) == "concatenate symbol")
            . prune (\a -> (identifier a) == "irrelevent")
            . prune (\a -> (identifier a) == "definition separator symbol")
 
-helptext :: IO String
-helptext = readFile "help.txt"
-
 main :: IO()
 main = do
-    args <- getArgs {-
-    if (or (map (\a -> elem a args) ["-h", "--help", "-help"])) then
-        print helptext
-        else print "" -}
+    args <- getArgs
+    if (or (map (\a -> elem a args) ["-h", "--help", "-help"]))
+        then do
+            {-
+                print the helptext
+            -}
+            helptext <- readFile "help.txt"
+            print helptext
+        else return ()
     fileContents <- readFile (args !! 0)
     case (parse syntax (args !! 0) fileContents) of
         Left err -> print err

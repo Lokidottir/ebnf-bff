@@ -16,7 +16,7 @@ betweenSame c = between c c
 
 -}
 insertWhere :: (a -> Bool) -> a -> [a] -> [a]
-insertWhere _ element []              = [element]
-insertWhere predicate element list    =
-    (fst part) ++ [element] ++ (snd part)
-        where part = partition predicate list
+insertWhere _ element []      = [element]
+insertWhere predicate element list
+    | (predicate (head list)) = (element:list)
+    | otherwise               = insertWhere predicate element (tail list)

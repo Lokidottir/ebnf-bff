@@ -6,10 +6,12 @@ import Text.Parsec
 import Text.Parsec.String
 import Text.Parsec.Char
 import Data.List
-
+import Data.String.Utils (strip)
 {-
     An implementation of an EBNF parser from the ISO EBNF informal
     definitions.
+
+    TODO: better error messages
 -}
 
 primST :: Parser String -> String -> Parser SyntaxTree
@@ -17,6 +19,14 @@ primST par name = do
     pos <- getPosition
     text <- par
     return (SyntaxTree name text pos [])
+
+{-
+    TODO: parsers for less verbose sourse code
+        primChild    | parser that will parse for a single child
+        primChildren | parser that will parse for many children
+        primTerminal | parser that will parse for a string (primST)
+-}
+
 
 {-|
     Syntax parser, parses an entire syntax
@@ -182,7 +192,7 @@ metaIdentifier = do
         h <- letter <|> char '_'
         t <- many (letter <|> space <|> digit <|> (char '_'))
         return (h:t))
-    return (SyntaxTree "meta identifier" ident pos [])
+    return (SyntaxTree "meta identifier" (strip ident) pos [])
 
 
 {-|
