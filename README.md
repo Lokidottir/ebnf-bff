@@ -1,4 +1,4 @@
-# ebnf-bff ![](https://travis-ci.org/Lokidottir/monadic-ebnf-bff.svg)
+# ebnf-bff ![](https://travis-ci.org/Lokidottir/ebnf-bff.svg?branch=master)
 
 Parser combinators & EBNF, BFFs!
 
