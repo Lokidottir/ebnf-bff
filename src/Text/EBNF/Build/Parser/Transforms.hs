@@ -1,6 +1,6 @@
-module EBNF.Build.Parser.Transforms where
+module Text.EBNF.Build.Parser.Transforms where
 
-import EBNF.SyntaxTree
+import Text.EBNF.SyntaxTree
 
 idlist :: [Identifier] -> (SyntaxTree -> SyntaxTree) -> SyntaxTree -> SyntaxTree
 idlist list f st

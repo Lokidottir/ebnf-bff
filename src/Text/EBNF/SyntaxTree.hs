@@ -1,8 +1,8 @@
-module EBNF.SyntaxTree where
+module Text.EBNF.SyntaxTree where
 {-
     Syntax Tree module for data type and related functions
 -}
-import EBNF.Helper
+import Text.EBNF.Helper
 import Text.Parsec.Pos
 import Data.List
 import Data.Tuple

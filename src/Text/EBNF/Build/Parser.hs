@@ -1,8 +1,8 @@
-module EBNF.Build.Parser where
+module Text.EBNF.Build.Parser where
 
-import EBNF.SyntaxTree
-import EBNF.Informal (syntax)
-import EBNF.Helper
+import Text.EBNF.SyntaxTree
+import Text.EBNF.Informal (syntax)
+import Text.EBNF.Helper
 import qualified EBNF.Build.Parser.Transforms as T
 import Text.Parsec
 

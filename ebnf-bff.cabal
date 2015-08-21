@@ -13,10 +13,10 @@ extra-source-files:  README.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     EBNF,
-                       EBNF.Informal,
-                       EBNF.SyntaxTree,
-                       EBNF.Helper
+  exposed-modules:     Text.EBNF
+                       Text.EBNF.Informal,
+                       Text.EBNF.SyntaxTree,
+                       Text.EBNF.Helper
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8,

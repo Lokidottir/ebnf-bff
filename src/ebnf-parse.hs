@@ -1,6 +1,6 @@
-import EBNF hiding (main)
-import EBNF.Informal (syntax)
-import EBNF.SyntaxTree
+import Text.EBNF hiding (main)
+import Text.EBNF.Informal (syntax)
+import Text.EBNF.SyntaxTree
 import Text.Parsec
 import Data.List
 import Data.Aeson

@@ -1,6 +1,6 @@
-module EBNF where
+module Text.EBNF where
 
-import EBNF.Informal (syntax)
+import Text.EBNF.Informal (syntax)
 
 main :: IO()
 main = do

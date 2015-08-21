@@ -1,7 +1,7 @@
-module EBNF.Informal where
+module Text.EBNF.Informal where
 
-import EBNF.Helper
-import EBNF.SyntaxTree
+import Text.EBNF.Helper
+import Text.EBNF.SyntaxTree
 import Text.Parsec
 import Text.Parsec.String
 import Text.Parsec.Char

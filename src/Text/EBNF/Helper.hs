@@ -1,4 +1,4 @@
-module EBNF.Helper where
+module Text.EBNF.Helper where
 
 import Text.Parsec
 import Text.Parsec.String
