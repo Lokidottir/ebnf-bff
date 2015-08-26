@@ -89,3 +89,5 @@ pruneIdentifier st identifier = prune (\s -> ) st
 isTerminal :: SyntaxTree -> Bool
 isTerminal (SyntaxTree _ _ _ []) = True
 isTerminal (SyntaxTree _ _ _ _)  = False
+
+nulltree = SyntaxTree "" "" (newPos "" 0 0) []

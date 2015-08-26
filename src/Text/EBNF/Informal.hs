@@ -53,7 +53,7 @@ syntaxRule = do
         blC <- irrelevent
         ter <- primST (string ";" <|> string ".") "terminator symbol"
         blPost <- irrelevent
-        return [meta, blA, eq, blB, defL, blC, ter]
+        return [blPre, meta, blA, eq, blB, defL, blC, ter, blPost]
     return (SyntaxTree "syntax rule" "" pos ch)
 
 definitionsList :: Parser SyntaxTree
@@ -232,7 +232,11 @@ commentCharacterST = do
 whitespaceST :: Parser SyntaxTree
 whitespaceST = do
     pos <- getPosition
-    ch <- string " " <|> string "\n" <|> string "\f" <|> string "\v" <|> string "\t"
+    ch <- string " "
+      <|> string "\n"
+      <|> string "\f"
+      <|> string "\v"
+      <|> string "\t"
     return (SyntaxTree "whitespace" ch pos [])
 
 anyCharSW :: Parser String
