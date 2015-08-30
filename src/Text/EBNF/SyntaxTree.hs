@@ -11,7 +11,7 @@ import Data.Aeson.Types
 import Data.Text (pack)
 
 type Identifier = String
-type Content = String
+type Content    = String
 
 data SyntaxTree = SyntaxTree {
                  identifier :: !Identifier,
@@ -34,6 +34,49 @@ instance ToJSON SourcePos where
     toJSON pos = (object [(pack "name") .= (sourceName pos),
                           (pack "line") .= (sourceLine pos),
                           (pack "col")  .= (sourceColumn pos)])
+{-|
+    returns a syntax tree similar to the one passed but with
+    the given identifier.
+-}
+replaceIdentifier :: Identifier -> SyntaxTree -> SyntaxTree
+replaceIdentifier i st = (SyntaxTree
+                         (i)
+                         (content st)
+                         (position st)
+                         (children st))
+
+{-|
+    returns a syntax tree similar to the one passed but with
+    the given content.
+-}
+replaceContent :: Content -> SyntaxTree -> SyntaxTree
+replaceContent c st = (SyntaxTree
+                      (identifier st)
+                      (c)
+                      (position st)
+                      (children st))
+
+{-|
+    returns a syntax tree similar to the one passed but with
+    the given position.
+-}
+replacePosition :: SourcePos -> SyntaxTree -> SyntaxTree
+replacePosition p st = (SyntaxTree
+                       (identifier st)
+                       (content st)
+                       (p)
+                       (children st))
+
+{-|
+    returns a syntax tree similar to the one passed but with
+    the given children.
+-}
+replaceChildren :: [SyntaxTree] -> SyntaxTree -> SyntaxTree
+replaceChildren ch st = (SyntaxTree
+                        (identifier st)
+                        (content st)
+                        (position st)
+                        (ch))
 
 {-|
     inserts a syntax tree as a child, list is sorted by source code

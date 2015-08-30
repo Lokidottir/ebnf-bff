@@ -101,7 +101,9 @@ syntacticTerm = do
     self-reference in this implementation.
 -}
 syntacticException :: Parser SyntaxTree
-syntacticException = syntacticFactor
+syntacticException = do
+    st <- syntacticFactor
+    return (replaceIdentifier "syntactic exception" st)
 
 syntacticFactor :: Parser SyntaxTree
 syntacticFactor = do
