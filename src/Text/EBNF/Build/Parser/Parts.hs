@@ -12,7 +12,7 @@ import Data.Maybe
 
 
 {-|
-    For each instance of a SyntaxTree with the identifier raiseIdentifier
+    For each instance of a SyntaxTree with the identifier raiseIdentifier,
     merge it's children with it's parent's children.
 -}
 raise :: SyntaxTree -> SyntaxTree
@@ -31,7 +31,16 @@ raiseIdentifier = "&raise"
 cleanup :: SyntaxTree -> SyntaxTree
 cleanup st = prune (\a -> a == nulltree) st
 
-newtype GrammarRule = GrammarRule (String, ConstructedParser)
+data GrammarRule = GrammarRule {
+                rulename :: String,
+                rule     :: ConstructedParser
+                }
+
+grToTuple :: GrammarRule -> (String, ConstructedParser)
+grToTuple gr = (rulename $ gr, rule $ gr)
+
+lookupGrammar :: String -> [GrammarRule] -> Maybe ConstructedParser
+lookupGrammar rn grs = lookup rn . map grToTuple $ grs
 
 type ConstructedParser = ([GrammarRule] -> Parser SyntaxTree)
 
@@ -43,7 +52,7 @@ buildSyntax :: SyntaxTree -> [GrammarRule]
 buildSyntax st = map (buildSyntaxRule) (children st)
 
 buildSyntaxRule :: SyntaxTree -> GrammarRule
-buildSyntaxRule st = GrammarRule (rulename, (buildDefList deflist))
+buildSyntaxRule st = GrammarRule rulename (buildDefList deflist)
                         where
                             {- The meta identifier of the rule that is being built -}
                             rulename = pollRulename st
@@ -67,8 +76,8 @@ buildDefList :: SyntaxTree -> ConstructedParser
 buildDefList st = (\a -> do
     pos <- getPosition
     let deflist' = map (\b -> b a) deflist
-    ch <- choice (deflist a)
-    return (SyntaxTree raiseIdentifier "" pos ch))
+    ch <- choice deflist'
+    return (SyntaxTree raiseIdentifier "" pos [ch]))
         where
             deflist = map buildSingleDef
                       . filter (\a -> (identifier a) == "single definition")
@@ -82,11 +91,12 @@ buildDefList st = (\a -> do
 buildSingleDef :: SyntaxTree -> ConstructedParser
 buildSingleDef st = (\a -> do
     pos <- getPosition
-    ch <- mapM (\b -> b a) termlist
+    let termlist' = map (\b -> b a) termlist
+    ch <- mapM (\a -> do {x <- a; return x}) termlist'
     return (SyntaxTree raiseIdentifier "" pos ch))
     where
         termlist = map buildSyntacticTerm
-                   . filter (\a -> identifier == "syntactic term")
+                   . filter (\a -> identifier a == "syntactic term")
                    . children $ st
 
 buildSyntacticTerm :: SyntaxTree -> ConstructedParser
@@ -99,15 +109,16 @@ buildSyntacticTerm st
 buildSTWithException :: SyntaxTree -> ConstructedParser
 buildSTWithException st = (\a -> do
     notFollowedBy (except a)
-    return (factor a))
+    factor a)
         where
             except = buildSyntacticFactor
                      . fromJust
-                     . find (\a -> (identifier a) == "syntactic exception") $ st
+                     . find (\a -> (identifier a) == "syntactic exception")
+                     . children $ st
             factor = buildSTWithoutException st
 
 buildSTWithoutException :: SyntaxTree -> ConstructedParser
-buildSTWithoutException st = (\a -> return factor a)
+buildSTWithoutException st = (\a -> factor a)
     where
         factor = buildSyntacticFactor
                  . fromJust
@@ -115,28 +126,32 @@ buildSTWithoutException st = (\a -> return factor a)
                  . children $ st
 
 buildSyntacticFactor :: SyntaxTree -> ConstructedParser
-buildSyntacticFactor st = (\a -> count num . primary $ a)
+buildSyntacticFactor st = (\a -> do
+    pos <- getPosition
+    ch <- count num . primary $ a
+    return (SyntaxTree raiseIdentifier "" pos ch))
     where
         primary = buildSyntacticPrimary
                   . fromJust
-                  . find (\a -> identifier $ a == "syntactic primary")
+                  . find (\a -> identifier a == "syntactic primary")
                   . children $ st
-        num     = read (maybe "1"
-                       . find (\a -> identifier $ a == "integer")
-                       . children $ st) :: Int
+        num     = read (case (find (\a -> identifier a == "integer")
+                        . children $ st) of
+                            Nothing -> "1"
+                            Just a  -> content a) :: Int
 
 buildSyntacticPrimary :: SyntaxTree -> ConstructedParser
 buildSyntacticPrimary st =
-    let ch = head . children st
+    let ch = head . children $ st
     in case (identifier ch) of
         "optional sequence" -> buildOptionalSequence ch
         "repeated sequence" -> buildRepeatedSequence ch
         "grouped sequence"  -> buildGroupedSequence ch
-        "special sequence"  -> (\a -> nulltree)
+        "special sequence"  -> (\_ -> do return nulltree) -- I /know/ it's awful
         "meta identifier"   -> buildMetaIdentifier ch
         "terminal string"   -> buildTerminalString ch
-        "empty sequence"    -> (\a -> nulltree)
-        otherwise           -> (\a -> nulltree)
+        "empty sequence"    -> (\_ -> do return nulltree) -- I /know/ it's awful
+        otherwise           -> (\_ -> do return nulltree) -- I /know/ it's awful
 
 {-|
     A sequence that does not have to be parsed
@@ -147,38 +162,41 @@ buildOptionalSequence st =
         where
             deflist =
                 buildDefList
-                . fromJust find (\a -> identifier $ a == "definitions list")
+                . fromJust
+                . find (\a -> identifier a == "definitions list")
                 . children $ st
 
 buildRepeatedSequence :: SyntaxTree -> ConstructedParser
 buildRepeatedSequence st =
     (\a -> do
     pos <- getPosition
-    ch <- many deflist
+    ch <- many (deflist a)
     return (SyntaxTree raiseIdentifier "" pos ch))
         where
             deflist =
                 buildDefList
                 . fromJust
-                . find (\a -> identifier $ a == "definitions list")
+                . find (\a -> identifier a == "definitions list")
                 . children $ st
 
 buildGroupedSequence :: SyntaxTree -> ConstructedParser
 buildGroupedSequence st = buildDefList
                           . fromJust
-                          . find (\a -> identifier $ a == "definitions list")
+                          . find (\a -> identifier a == "definitions list")
                           . children $ st
 
 buildMetaIdentifier :: SyntaxTree -> ConstructedParser
-buildMetaIdentifier st =
-    (\a -> lookup iden a)
-        where
-            iden = content st
+buildMetaIdentifier st = (\a -> do
+        let parser = fromJust . lookupGrammar iden $ a
+        st <- parser a
+        return st)
+            where
+                iden = content st
 
 buildTerminalString :: SyntaxTree -> ConstructedParser
 buildTerminalString st = (\a -> do
     pos <- getPosition
     text <- string str
-    return (SyntaxTree ))
+    return (SyntaxTree "&string" text pos []))
         where
             str = (content st)

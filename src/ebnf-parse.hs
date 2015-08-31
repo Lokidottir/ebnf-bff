@@ -14,7 +14,7 @@ import System.IO
 main :: IO()
 main = do
     args <- getArgs
-    if (or . map (\a -> elem a args) ["-h", "--help", "-help"])
+    if (or . map (\a -> elem a args) $ ["-h", "--help", "-help"])
         then do
             {-
                 print the helptext
@@ -22,7 +22,7 @@ main = do
             helptext <- readFile "help.txt"
             print helptext
         else return ()
-    fileContents <- readFile (args !! 0)
-    case (parse syntax (args !! 0) fileContents) of
+    fileContents <- readFile (head args)
+    case (parse syntax (head args) fileContents) of
         Left err -> print err
         Right st -> BS.writeFile "out.json" ((encode . discard) st)
