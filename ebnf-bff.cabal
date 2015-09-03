@@ -1,7 +1,7 @@
 name:                ebnf-bff
 version:             0.1.0.0
 synopsis:            A library & program that builds parsers from ISO EBNF using Parsec
--- description:
+description:
 license:             MIT
 license-file:        LICENSE
 author:              Lokidottir
@@ -11,6 +11,10 @@ category:            Text
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10
+
+source-repository head
+  type: git
+  location: https://github.com/Lokidottir/ebnf-bff
 
 library
   exposed-modules:     Text.EBNF,
@@ -24,8 +28,7 @@ library
   build-depends:       base >=4.7 && <4.8,
                        parsec >=3.1 && <3.2,
                        aeson >= 0.8 && < 0.9,
-                       text >= 1.2 && < 1.3,
-                       MissingH >= 1.3 && < 1.4
+                       text >= 1.2 && < 1.3
   hs-source-dirs:      src
   default-language:    Haskell2010
   -- ghc-options: -O2
@@ -37,3 +40,4 @@ executable ebnf-parse
                        aeson >= 0.8 && < 0.9,
                        bytestring >= 0.10 && < 0.11
   main-is:             src/ebnf-parse.hs
+  default-language:    Haskell2010

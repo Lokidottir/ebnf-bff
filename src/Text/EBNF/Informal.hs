@@ -6,13 +6,28 @@ import Text.Parsec
 import Text.Parsec.String
 import Text.Parsec.Char
 import Data.List
-import Data.String.Utils (strip)
 {-
     An implementation of an EBNF parser from the ISO EBNF informal
     definitions.
 
     TODO: better error messages
 -}
+
+
+{-
+    Implementation of MissingH's stripr function to lower the number
+    of dependencies.
+-}
+strip :: String -> String
+strip str = reverse . strip' . reverse $ str
+
+strip' :: String -> String
+strip' str
+    | str == "" = ""
+    | not . (\a -> elem a stripWSList) . head $ str = str
+    | otherwise = strip' . tail $ str
+
+stripWSList = " \t\n\v\f"
 
 primST :: Parser String -> String -> Parser SyntaxTree
 primST par name = do

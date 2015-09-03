@@ -17,7 +17,7 @@ instance Show Report where
     show report = (concat . map show (errors report)) ++ (show (position report))
 
 data BuildWarning = CircularDepends SyntaxTree
-                  | OtherWarning String
+                  | OtherWarning String SyntaxTree
 
 instance Show BuildWarning
     show warn =

@@ -24,15 +24,21 @@ children: [<syntax tree>]
 Use:
     ebnf-parse [OPTIONS]
 Flags:
-    -h --help                      | show this text
+    -h --help                      | show this text.
+    -p --primary-rule=rulename     | the rule to be applied to the whole of each
+                                     source file.
     -g --grammar=filename          | load the EBNF grammar from the given file
     -o --output=[filename|stdout]  | output the AST to the given file or stdout
-                                     (--output=stdout)
+                                     (--output=stdout).
     --format=[json|xml|plaintext]  | the format for the AST, defaults to
-                                     plaintext
+                                     plaintext.
+    --export-ebnf-ast              | instead of parsing given files, parse the
+                                     EBNF grammar and output a raw AST of the
+                                     grammar (still uses --prune-ids, --format
+                                     flags).
     --prune-ids=[comma delim list] | removes any subtrees from the tree that
                                      have an identifier from the given list
     -s --source-files              | all arguments after this flag will be
-                                     assumed to be file names for files to be
-                                     parsed by the given grammar.
+                                     assumed to be file names or directories
+                                     for files to be parsed by the given grammar.
 ```
