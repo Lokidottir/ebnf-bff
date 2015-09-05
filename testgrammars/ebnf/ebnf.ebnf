@@ -1,0 +1,6 @@
+(*
+    EBNF grammar defined formally by Fionan Haralddottir
+
+    This grammar takes some liberties from the ISO format,
+    such as allowing '_' characters in meta identifiers
+*)

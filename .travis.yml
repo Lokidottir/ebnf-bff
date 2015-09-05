@@ -7,5 +7,4 @@ ghc: 7.8
 script:
     - cabal install
     - cabal configure
-    - cabal run ebnf-parse ebnfgrammar.ebnf
-    - cat out.json
+    - bash tests.sh

@@ -2,8 +2,8 @@
 
 Parser combinators & EBNF, BFFs!
 
-Still being developed, though `ebnf-parse <filename>` will output an AST in JSON
-format to `out.json` if the file is a valid EBNF grammar.
+Still being developed, and almost certainly bug-ridden. Currently working on
+`ebnf-parse`, the commandline interface for ebnf-bff.
 
 help text:
 ```
