@@ -98,15 +98,21 @@ main' args = do
     case (parse syntax grammarFile grammarContent) of
         Left err -> die . show $ err
         Right st ->
+            {-
+                grammar was successfully parsed, if the --export-ebnf-ast
+                flag is present then we output the syntax tree of the EBNF,
+                otherwise we are going to evaluate it and turn it into a
+                parser then parse the source files with the parser.
+            -}
             if (eleml ebnfastArgs args) then
                 output outputLoc . showPipe $ st
                 else do
-                    putStrLn "todo: doing the EBNF -> Parser thing"
                     return ()
+
     return ()
 
 jsonST :: SyntaxTree -> String
-jsonST st = BSC.unpack (encode st) :: String
+jsonST st = BSC.unpack (encode st)
 
 xmlST :: SyntaxTree -> String
 xmlST st = show st
@@ -170,7 +176,3 @@ removeprel p t = filter (\c -> not . or . map (\d -> isPrefixOf d c) $ p) $ t
 -}
 die :: String -> IO a
 die err = hPutStrLn stderr err >> exitFailure
-
-{-
-    Unescape
--}

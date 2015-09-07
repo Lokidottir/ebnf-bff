@@ -6,13 +6,14 @@ import Text.EBNF.Helper
 import Text.Parsec.String
 import Text.EBNF.Informal (nullParser)
 import Text.EBNF.Build.Parser.Parts
+-- import Text.EBNF.Build.Parser.Except
 
 {-|
     given a syntax tree for a valid EBNF grammar, returns a
     association list with the key as the meta identifier.
 -}
-build :: SyntaxTree -> [(Identifier, Parser SyntaxTree)]
-build st = [("", nullParser)]
+build :: SyntaxTree -> [GrammarRule]
+build st = [GrammarRule "" nullParser]
 
 
 {-|

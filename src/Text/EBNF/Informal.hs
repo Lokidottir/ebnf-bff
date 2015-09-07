@@ -6,13 +6,13 @@ import Text.Parsec
 import Text.Parsec.String
 import Text.Parsec.Char
 import Data.List
+import Data.Maybe
 {-
     An implementation of an EBNF parser from the ISO EBNF informal
     definitions.
 
     TODO: better error messages
 -}
-
 
 {-
     Implementation of MissingH's stripr function to lower the number
@@ -270,3 +270,12 @@ eofStr :: Parser String
 eofStr = do
     try eof
     return ""
+
+unescape :: String -> String
+unescape []       = []
+unescape [a]      = [a]
+unescape (a:b:xs) = let esc  = ("0abfnrtv\"&'\\", "\0\a\b\f\n\r\t\v\"\&\'\\")
+                        esc' = zip (fst esc) (snd esc)
+                    in if ((a == '\\') && (elem b . fst $ esc)) then
+                        (fromJust . lookup b $ esc'):(unescape xs)
+                        else a:(unescape (b:xs))

@@ -1,7 +1,4 @@
-module Text.EBNF.Build.Parser.Parts (buildSyntax,
-                                     buildSyntaxRule,
-                                     GrammarRule,
-                                     ConstructedParser) where
+module Text.EBNF.Build.Parser.Parts where
 
 import Text.EBNF.SyntaxTree
 import Text.Parsec.String
@@ -92,7 +89,7 @@ buildSingleDef :: SyntaxTree -> ConstructedParser
 buildSingleDef st = (\a -> do
     pos <- getPosition
     let termlist' = map (\b -> b a) termlist
-    ch <- mapM (\a -> do {x <- a; return x}) termlist'
+    ch <- mapM (>>= return) termlist'
     return (SyntaxTree raiseIdentifier "" pos ch))
     where
         termlist = map buildSyntacticTerm
