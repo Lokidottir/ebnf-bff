@@ -29,19 +29,34 @@ cleanup :: SyntaxTree -> SyntaxTree
 cleanup st = prune (\a -> a == nulltree) st
 
 data GrammarRule = GrammarRule {
-                rulename :: String,
-                rule     :: ConstructedParser
-                }
+                       rulename :: String,
+                       rule     :: ConstructedParser
+                   }
+
+{-|
+    ConstructedParser is the type of the parser as generated,
+    which takes a list of GrammarRules and returns a syntax
+    tree.
+-}
+type ConstructedParser = ([GrammarRule] -> Parser SyntaxTree)
+
+{-|
+    Null grammar rule, bad form but useful for early version.
+    to be replaced by Maybe later..
+-}
+nullGrammar = GrammarRule "" (\_ -> return nulltree)
 
 grToTuple :: GrammarRule -> (String, ConstructedParser)
 grToTuple gr = (rulename $ gr, rule $ gr)
 
+{-|
+    lookup for grammars.
+-}
 lookupGrammar :: String -> [GrammarRule] -> Maybe ConstructedParser
 lookupGrammar rn grs = lookup rn . map grToTuple $ grs
 
-type ConstructedParser = ([GrammarRule] -> Parser SyntaxTree)
 
-{-
+{-|
     builds a rule from syntax tree that represents a valid EBNF
     file. raise . cleanup . replaceIdentifier rulename .
 -}
@@ -60,7 +75,8 @@ buildSyntaxRule st = GrammarRule rulename (buildDefList deflist)
 
 {-|
     for a SyntaxTree that represents a whole rule, finds the
-    first meta identifier. does not recurse into
+    first meta identifier. does not recurse into the tree's
+    children.
 -}
 pollRulename :: SyntaxTree -> Identifier
 pollRulename st =
@@ -69,6 +85,10 @@ pollRulename st =
      . find (\a -> (identifier a) == "meta identifier")
      . children $ st
 
+{-|
+    build a definitions list, a list of parsers to
+    try one at a time until one succeeds.
+-}
 buildDefList :: SyntaxTree -> ConstructedParser
 buildDefList st = (\a -> do
     pos <- getPosition

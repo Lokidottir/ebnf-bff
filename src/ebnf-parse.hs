@@ -1,6 +1,7 @@
 import Text.EBNF hiding (main)
 import Text.EBNF.Informal (syntax)
 import Text.EBNF.SyntaxTree
+import Text.EBNF.Helper
 import Text.EBNF.Build.Parser
 import Text.Parsec
 import Data.List
@@ -91,6 +92,11 @@ main' args = do
                         "json"    -> jsonST
                         "xml"     -> xmlST
                         otherwise -> showST
+    let parserf = \gr fc fname ->
+                      case (parse ((fromJust $ lookupGrammar primaryRule gr) gr) fname fc) of
+                          Left err -> (die . show $ err) >> return ""
+                          Right st -> return $ showPipe st
+
     {- pure section over -}
     sourcePaths <- pollSourcePaths sourcePaths'
     grammarContent <- readFile grammarFile
@@ -107,8 +113,8 @@ main' args = do
             if (eleml ebnfastArgs args) then
                 output outputLoc . showPipe $ st
                 else do
+                    parser' <- ioTryBuild st
                     return ()
-
     return ()
 
 jsonST :: SyntaxTree -> String
@@ -168,11 +174,3 @@ prelargs p t = or . map (\c -> or . map (\d -> isPrefixOf c d) $ t) $ p
     list. useful for filtering arguments for recursive processing.
 -}
 removeprel p t = filter (\c -> not . or . map (\d -> isPrefixOf d c) $ p) $ t
-
-{-
-    die does not exist in the version of the base package used, implementation copied
-    from the System.Exit source at:
-    https://hackage.haskell.org/package/base-4.8.1.0/docs/src/System.Exit.html#die
--}
-die :: String -> IO a
-die err = hPutStrLn stderr err >> exitFailure

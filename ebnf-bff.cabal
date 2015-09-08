@@ -22,7 +22,9 @@ library
                        Text.EBNF.SyntaxTree,
                        Text.EBNF.Helper,
                        Text.EBNF.Build.Parser,
-                       Text.EBNF.Build.Parser.Transforms
+                       Text.EBNF.Build.Parser.Transforms,
+                       Text.EBNF.Build.Parser.Parts,
+                       Text.EBNF.Build.Parser.Except
   -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8,
