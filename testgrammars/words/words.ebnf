@@ -2,4 +2,4 @@ letter = "A" | "B" | "C";
 word = letter, {letter};
 ws = " ", {" "};
 elem = [ws], word, [ws];
-sentance = elem, {elem};
+sentence = elem, {elem};

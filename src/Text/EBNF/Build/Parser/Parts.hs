@@ -60,18 +60,20 @@ lookupGrammar rn grs = lookup rn . map grToTuple $ grs
     builds a rule from syntax tree that represents a valid EBNF
     file. raise . cleanup . replaceIdentifier rulename .
 -}
-buildSyntax :: SyntaxTree -> [GrammarRule]
+buildSyntax :: SyntaxTree -> [Either String GrammarRule]
 buildSyntax st = map (buildSyntaxRule) (children st)
 
-buildSyntaxRule :: SyntaxTree -> GrammarRule
-buildSyntaxRule st = GrammarRule rulename (buildDefList deflist)
-                        where
-                            {- The meta identifier of the rule that is being built -}
-                            rulename = pollRulename st
-                            {- The definitions list to be built -}
-                            deflist = fromJust
-                                      . find (\a -> (identifier a) == "definitions list")
-                                      . children $ st
+buildSyntaxRule :: SyntaxTree -> Either String GrammarRule
+buildSyntaxRule st = if (deflist /= nulltree) then
+                         Right $ GrammarRule rulename (buildDefList deflist)
+                         else Left $ ("error: could not find a definitions list at " ++ (show $ position st))
+                             where
+                                {- The meta identifier of the rule that is being built -}
+                                rulename = pollRulename st
+                                {- The definitions list to be built -}
+                                deflist = maybe nulltree id
+                                          . find (\a -> (identifier a) == "definitions list")
+                                          . children $ st
 
 {-|
     for a SyntaxTree that represents a whole rule, finds the
@@ -80,8 +82,7 @@ buildSyntaxRule st = GrammarRule rulename (buildDefList deflist)
 -}
 pollRulename :: SyntaxTree -> Identifier
 pollRulename st =
-     content
-     . fromJust
+     maybe "&failed" content
      . find (\a -> (identifier a) == "meta identifier")
      . children $ st
 
@@ -94,7 +95,7 @@ buildDefList st = (\a -> do
     pos <- getPosition
     let deflist' = map (\b -> b a) deflist
     ch <- choice deflist'
-    return (SyntaxTree raiseIdentifier "" pos [ch]))
+    return $ cleanup . raise $ (SyntaxTree raiseIdentifier "" pos [ch]))
         where
             deflist = map buildSingleDef
                       . filter (\a -> (identifier a) == "single definition")

@@ -92,7 +92,7 @@ main' args = do
                         "json"    -> jsonST
                         "xml"     -> xmlST
                         otherwise -> showST
-    let parserf = \gr fc fname ->
+    let parserf = \gr fname fc ->
                       case (parse ((fromJust $ lookupGrammar primaryRule gr) gr) fname fc) of
                           Left err -> (die . show $ err) >> return ""
                           Right st -> return $ showPipe st
@@ -114,11 +114,13 @@ main' args = do
                 output outputLoc . showPipe $ st
                 else do
                     parser' <- ioTryBuild st
+                    shownTrees <- mapM (\a -> readFile a >>= parserf parser' a) sourcePaths
+                    output outputLoc (concat shownTrees)
                     return ()
     return ()
 
 jsonST :: SyntaxTree -> String
-jsonST st = BSC.unpack (encode st)
+jsonST st = BSC.unpack . encode $ st
 
 xmlST :: SyntaxTree -> String
 xmlST st = show st

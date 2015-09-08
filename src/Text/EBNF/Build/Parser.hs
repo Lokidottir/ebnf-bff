@@ -8,13 +8,14 @@ import Text.EBNF.Informal (nullParser)
 import Text.EBNF.Build.Parser.Parts
 import Text.EBNF.Build.Parser.Except
 import System.IO
+import Data.Either
 
 {-|
     given a syntax tree for a valid EBNF grammar, returns a
     association list with the key as the meta identifier.
 -}
 build :: SyntaxTree -> [GrammarRule]
-build st = [nullGrammar]
+build st = rights . buildSyntax $ st
 
 
 {-|
