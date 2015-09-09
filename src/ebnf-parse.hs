@@ -42,7 +42,7 @@ processArgs :: [String] -> IO()
 processArgs args
     | eleml helpArg args               =
         -- help text expected
-        readFile "help.txt" >>= putStrLn
+        putStrLn helptext
     | not . prelargs grammarArg $ args =
         -- no grammar specified
         die "error: no grammar was provided (--grammar|-g=<filename>)"
@@ -59,7 +59,7 @@ processArgs args
         processArgs ("--output=stdout":args)
     | not . prelargs formatArgs $ args =
         -- add default
-        processArgs ("--format=plaintext":args)
+        processArgs ("--format=json":args)
     {-
         Necessary arguments checked and defaults added, checking
         for integrity of arguments beyond this point
@@ -129,7 +129,8 @@ showST :: SyntaxTree -> String
 showST st = show st
 
 {-
-    returns the full, recursed list of source files to be
+    returns the full, recursed list of source files to be read
+    and parsed.
 -}
 pollSourcePaths :: [String] -> IO [String]
 pollSourcePaths paths =
@@ -145,7 +146,7 @@ pollSourcePaths paths =
                     dircontent <- getDirectoryContents h
                     sp' <- pollSourcePaths dircontent
                     sp <- pollSourcePaths t
-                    return (sp ++ sp'))
+                    return (sp' ++ sp))
                 (die ("error: '" ++ h ++ "' is not a file or directory") >> return [])))
 
 output :: String -> String -> IO()
@@ -176,3 +177,40 @@ prelargs p t = or . map (\c -> or . map (\d -> isPrefixOf c d) $ t) $ p
     list. useful for filtering arguments for recursive processing.
 -}
 removeprel p t = filter (\c -> not . or . map (\d -> isPrefixOf d c) $ p) $ t
+
+helptext =
+    unlines [
+        "ebnf-parse written by fionan haralddottir, available under the MIT licence.",
+        "this program is part of the ebnf-bff cabal package",
+        "",
+        "this is a program that parses an ISO standard EBNF grammar and outputs an",
+        "abstract syntax tree in the format:",
+        "",
+        "identifier: <string>",
+        "content: <string>",
+        "position:",
+        "    line: <int>",
+        "    col: <int>",
+        "    name: <string>",
+        "children: [<syntax tree>]",
+        "",
+        "Use:",
+        "    ebnf-parse [OPTIONS]",
+        "Flags:",
+        "    -h --help                      | show this text.",
+        "    -p --primary-rule=rulename     | the rule to be applied to the whole of each",
+        "                                     source file.",
+        "    -g --grammar=filename          | load the EBNF grammar from the given file",
+        "    -o --output=[filename|stdout]  | output the AST to the given file or stdout",
+        "                                     (--output=stdout).",
+        "    --format=[json|xml|plaintext]  | the format for the AST, defaults to",
+        "                                     json.",
+        "    --export-ebnf-ast              | instead of parsing given files, parse the",
+        "                                     EBNF grammar and output a raw AST of the",
+        "                                     grammar (still uses --prune-ids, --format",
+        "                                     flags).",
+        "    --prune-ids=[comma delim list] | removes any subtrees from the tree that",
+        "                                     have an identifier from the given list",
+        "    -s --source-files              | all arguments after this flag will be",
+        "                                     assumed to be file names or directories",
+        "                                     for files to be parsed by the given grammar."]

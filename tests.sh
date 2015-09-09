@@ -1,2 +1,2 @@
 #!/bin/bash
-echo "testing doesn't exist yet"
+echo "test don't exist yet"

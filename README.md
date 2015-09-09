@@ -16,7 +16,7 @@ sudo cabal install --only-dependencies --global && sudo cabal install --global
 ```
 
 #### Installing from cabal
-** Project is not yet hosted on Hackage (TODO) **
+**Project is not yet hosted on Hackage (TODO)**
 
 ### Usage
 
@@ -46,7 +46,7 @@ Flags:
     -o --output=[filename|stdout]  | output the AST to the given file or stdout
                                      (--output=stdout).
     --format=[json|xml|plaintext]  | the format for the AST, defaults to
-                                     plaintext.
+                                     json.
     --export-ebnf-ast              | instead of parsing given files, parse the
                                      EBNF grammar and output a raw AST of the
                                      grammar (still uses --prune-ids, --format
