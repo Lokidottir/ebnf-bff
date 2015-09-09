@@ -192,12 +192,12 @@ specialSequence = do
 quotedString :: Char -> Parser String
 quotedString quoter = do
     char quoter
-    cont <- many (syntacticExceptionCombinator anyChar (syntacticExceptionCombinator (string [quoter]) (escapedChar quoter)))
+    cont <- many (syntacticExceptionCombinator anyCharSW (string [quoter]))
     char quoter
-    return cont
+    return (concat cont)
 
-escapedChar :: Char -> Parser String
-escapedChar c = do
+escapedChar' :: Char -> Parser String
+escapedChar' c = do
     esc <- many (string "\\\\")
     ch <- string (['\\', c])
     return ((concat esc) ++ ch)
@@ -258,8 +258,16 @@ whitespaceST = do
 
 anyCharSW :: Parser String
 anyCharSW = do
-    c <- anyChar
+    c <- escapedChar <|> anyChar
     return [c]
+
+escapedChar :: Parser Char
+escapedChar = char '\\' >> choice (zipWith escape codes replacements)
+    where
+        codes = "0abfnrtv\"&\'\\"
+        replacements = "\0\a\b\f\n\r\t\v\"\&\'\\"
+        escape code replace = char code >> return replace
+
 
 tryRS :: Parser a -> Parser String
 tryRS par = do

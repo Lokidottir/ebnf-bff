@@ -58,19 +58,21 @@ lookupGrammar rn grs = lookup rn . map grToTuple $ grs
 
 {-|
     builds a rule from syntax tree that represents a valid EBNF
-    file. raise . cleanup . replaceIdentifier rulename .
+    file.
 -}
 buildSyntax :: SyntaxTree -> [Either String GrammarRule]
 buildSyntax st = map (buildSyntaxRule) (children st)
 
 buildSyntaxRule :: SyntaxTree -> Either String GrammarRule
 buildSyntaxRule st = if (deflist /= nulltree) then
-                         Right $ GrammarRule rulename (buildDefList deflist)
+                         Right $ GrammarRule rulename (\a -> do
+                             st' <- deflistBuilt a
+                             return $ cleanup . raise . replaceIdentifier rulename $ st')
                          else Left $ ("error: could not find a definitions list at " ++ (show $ position st))
                              where
                                 {- The meta identifier of the rule that is being built -}
                                 rulename = pollRulename st
-                                {- The definitions list to be built -}
+                                deflistBuilt = buildDefList deflist
                                 deflist = maybe nulltree id
                                           . find (\a -> (identifier a) == "definitions list")
                                           . children $ st

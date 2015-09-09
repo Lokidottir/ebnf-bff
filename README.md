@@ -1,11 +1,26 @@
 # ebnf-bff ![](https://travis-ci.org/Lokidottir/ebnf-bff.svg?branch=master)
 
-Parser combinators & EBNF, BFFs!
+## Parser combinators & EBNF, BFFs!
 
-Still being developed, and almost certainly bug-ridden. Currently working on
-`ebnf-parse`, the commandline interface for ebnf-bff.
+Currently barebones, but (most of) the help text is relevant (no --prune-ids yet).
 
-help text:
+### Installing
+
+#### Installing (Linux)
+As standard for installing haskell programs, you must have `ghc` and `cabal` installed
+
+```bash
+git clone https://github.com/Lokidottir/ebnf-bff
+cd ebnf-bff
+sudo cabal install --only-dependencies --global && sudo cabal install --global
+```
+
+#### Installing from cabal
+** Project is not yet hosted on Hackage (TODO) **
+
+### Usage
+
+**help text:**
 ```
 ebnf-parse written by fionan haralddottir, available under the MIT licence.
 this program is part of the ebnf-bff cabal package
@@ -42,3 +57,17 @@ Flags:
                                      assumed to be file names or directories
                                      for files to be parsed by the given grammar.
 ```
+
+### Todos:
+
+* Clean up the project enough to put on Hackage
+* Remove dependency to Aeson, for reducing the build times.
+* EBNF grammar analysis & reporting of potentially dangerous structures
+  (such as parsing infinite empty strings, parsec already does this
+  but we can give a source code location)
+* Better error messages on failed parsing of EBNF grammar
+* EBNF as defined in EBNF (properly)
+
+### Licence
+
+This project is under the MIT licence.
