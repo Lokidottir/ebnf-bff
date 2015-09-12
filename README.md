@@ -16,11 +16,14 @@ sudo cabal install --only-dependencies --global && sudo cabal install --global
 ```
 
 #### Installing from cabal
-**Project is not yet hosted on Hackage (TODO)**
+
+```
+sudo cabal install ebnf-bff --global
+```
 
 ### Usage
 
-**help text:**
+**help text for `ebnf-parse`:**
 ```
 ebnf-parse written by fionan haralddottir, available under the MIT licence.
 this program is part of the ebnf-bff cabal package
@@ -60,7 +63,7 @@ Flags:
 
 ### Todos:
 
-* Clean up the project enough to put on Hackage
+* Clean up the project
 * Remove dependency to Aeson, for reducing the build times.
 * EBNF grammar analysis & reporting of potentially dangerous structures
   (such as parsing infinite empty strings, parsec already does this

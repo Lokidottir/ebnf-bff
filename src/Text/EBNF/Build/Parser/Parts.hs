@@ -7,9 +7,8 @@ import Data.List
 import Data.Maybe
 
 
-
 {-|
-    For each instance of a SyntaxTree with the identifier raiseIdentifier,
+    For each instance of a SyntaxTree with the identifier @raiseIdentifier@,
     merge it's children with it's parent's children.
 -}
 raise :: SyntaxTree -> SyntaxTree
@@ -25,24 +24,27 @@ raise st = replaceChildren (sort $ ch ++ ch') st
 -}
 raiseIdentifier = "&raise"
 
+{-|
+    Prunes any @nulltree@s
+-}
 cleanup :: SyntaxTree -> SyntaxTree
 cleanup st = prune (\a -> a == nulltree) st
 
+{-|
+    Represents an EBNF grammar rule
+-}
 data GrammarRule = GrammarRule {
                        rulename :: String,
                        rule     :: ConstructedParser
                    }
 
-{-|
-    ConstructedParser is the type of the parser as generated,
-    which takes a list of GrammarRules and returns a syntax
-    tree.
--}
+
 type ConstructedParser = ([GrammarRule] -> Parser SyntaxTree)
+
 
 {-|
     Null grammar rule, bad form but useful for early version.
-    to be replaced by Maybe later..
+    to be replaced by Maybe later.
 -}
 nullGrammar = GrammarRule "" (\_ -> return nulltree)
 
@@ -57,12 +59,15 @@ lookupGrammar rn grs = lookup rn . map grToTuple $ grs
 
 
 {-|
-    builds a rule from syntax tree that represents a valid EBNF
+    Builds a rule from syntax tree that represents a valid EBNF
     file.
 -}
 buildSyntax :: SyntaxTree -> [Either String GrammarRule]
 buildSyntax st = map (buildSyntaxRule) (children st)
 
+{-|
+    Builds a single syntax rule
+-}
 buildSyntaxRule :: SyntaxTree -> Either String GrammarRule
 buildSyntaxRule st = if (deflist /= nulltree) then
                          Right $ GrammarRule rulename (\a -> do
@@ -71,25 +76,25 @@ buildSyntaxRule st = if (deflist /= nulltree) then
                          else Left $ ("error: could not find a definitions list at " ++ (show $ position st))
                              where
                                 {- The meta identifier of the rule that is being built -}
-                                rulename = pollRulename st
+                                rulename = getRulename st
                                 deflistBuilt = buildDefList deflist
                                 deflist = maybe nulltree id
                                           . find (\a -> (identifier a) == "definitions list")
                                           . children $ st
 
 {-|
-    for a SyntaxTree that represents a whole rule, finds the
+    For a @SyntaxTree@ that represents a whole rule, finds the
     first meta identifier. does not recurse into the tree's
     children.
 -}
-pollRulename :: SyntaxTree -> Identifier
-pollRulename st =
+getRulename :: SyntaxTree -> Identifier
+getRulename st =
      maybe "&failed" content
      . find (\a -> (identifier a) == "meta identifier")
      . children $ st
 
 {-|
-    build a definitions list, a list of parsers to
+    Builds a definitions list, a list of parsers to
     try one at a time until one succeeds.
 -}
 buildDefList :: SyntaxTree -> ConstructedParser
@@ -186,6 +191,9 @@ buildOptionalSequence st =
                 . find (\a -> identifier a == "definitions list")
                 . children $ st
 
+{-|
+    A sequence that will parse 0 or more times
+-}
 buildRepeatedSequence :: SyntaxTree -> ConstructedParser
 buildRepeatedSequence st =
     (\a -> do

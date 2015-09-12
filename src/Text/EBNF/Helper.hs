@@ -14,7 +14,7 @@ syntacticExceptionCombinator factor term = do
 betweenSame c = between c c
 
 {-|
-
+    
 -}
 insertWhere :: (a -> Bool) -> a -> [a] -> [a]
 insertWhere _ element []      = [element]
@@ -23,7 +23,7 @@ insertWhere predicate element list
     | otherwise               = insertWhere predicate element (tail list)
 
 
-{-
+{-|
     die does not exist in the version of the base package used, implementation copied
     from the System.Exit source at:
     https://hackage.haskell.org/package/base-4.8.1.0/docs/src/System.Exit.html#die

@@ -150,7 +150,8 @@ pollSourcePaths paths =
                 (die ("error: '" ++ h ++ "' is not a file or directory") >> return [])))
 
 output :: String -> String -> IO()
-output file str = if (file == "stdout") then putStrLn str else writeFile file str
+output "stdout" str = putStrLn str
+output file str     = writeFile file str
 
 {- get the data from the given arguments -}
 getArgData arglist args =

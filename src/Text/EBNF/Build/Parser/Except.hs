@@ -10,63 +10,98 @@ import Data.List
     warnings or invalid structures in EBNF grammars
 -}
 
-data FailData = FailData {failtype :: String, description :: String, pos :: SourcePos}
+data FailData = FailData {
+                    failtype :: String,
+                    description :: String,
+                    pos :: SourcePos
+                    } deriving (Eq)
 
 
 instance Show FailData where
-    show fd = concat [(show $ pos fd), " ", (failtype fd), ":", (description fd)]
+    show fd = concat [(failtype fd), " in " ,(show $ pos fd), ":\n", (description fd)]
 
 
 data Report = Clean
             | Warning {warnings :: [FailData]}
-            | Failed {failures :: [FailData]}
+            | Failed {failures :: [FailData]} deriving (Eq)
 
 
 instance Show Report where
-    show Clean       = ""
-    show (Warning w) = ""
-    show (Failed f)  = ""
+    show Clean       = "Clean Report"
+    show (Warning w) = concat . intersperse "\n" . map show $ w
+    show (Failed f)  = concat . intersperse "\n" . map show $ f
 
 
 concatReports :: [Report] -> Report
 concatReports reps = foldl combineReports (Clean) reps
 
 
-{-
-    Combining reports is a symmetric operation where Cleans
-    are overridden by warnings and failures, whereas warnings
-    are overridden only by failures. At the end the
+{-|
+    Combining reports is a symmetric operation where @Clean@s
+    are overridden by @Warning@s and @Failed@s, whereas @Warning@s
+    are overridden only by @Failed@s.
 -}
 combineReports :: Report -> Report -> Report
 combineReports Clean Clean = Clean
 combineReports Clean a = a
-combineReports a Clean = a
+combineReports a Clean = combineReports Clean a
 combineReports (Warning w) (Failed f) = Failed (sortBy (\a b -> compare (pos a) (pos b)) $ f ++ w)
-combineReports (Failed f) (Warning w) = Failed (sortBy (\a b -> compare (pos a) (pos b)) $ f ++ w)
+combineReports (Failed f) (Warning w) = combineReports (Warning w) (Failed f)
 combineReports (Failed f) (Failed f')   = Failed (sortBy (\a b -> compare (pos a) (pos b)) $ f ++ f')
 combineReports (Warning w) (Warning w') = Warning (sortBy (\a b -> compare (pos a) (pos b)) $ w ++ w')
 
 
 {-|
     Will analyse a syntax tree, returning reports to be combined
-    together
+    together.
 -}
 generateReport :: SyntaxTree -> Report
-generateReport st = concatReports $ map ($ st) reports
+generateReport st = concatReports . map ($ st) . map reporter $ reports
 
 
 reports :: [(SyntaxTree -> Report)]
-reports = [reportNeverTerminating]
+reports = [neverTerminating]
 
+reporter :: (SyntaxTree -> Report) -> SyntaxTree -> Report
+reporter fn st = let rep = fn st
+                     reps = map fn $ children st
+                 in concatReports (rep:reps)
 
 {-|
-    A never terminating parser is one that can parse an infinite
-    amount of empty strings, such parsers can be achieved with
-    @{[identifer]}@ pattern rules, which can parse indefinitely
-    but never terminate.
+    @Failed@ when a repeat sequence with only optional sequences or has
+    an optional sequence as it's first subsequence
+
+    @Warning@ when a repeat sequence contains a definitions list that
+    contains an optional sequence.
+
+    @Clean@ otherwise
 -}
-reportNeverTerminating :: SyntaxTree -> Report
-reportNeverTerminating st =
-    let rep = (\_ -> Clean) st
-        reps = map reportNeverTerminating . children $ st
-    in concatReports $ rep:reps
+neverTerminating :: SyntaxTree -> Report
+neverTerminating (SyntaxTree _ _ _ []) = Clean
+neverTerminating st
+    | opInRepeat        = Failed [reportf]
+    | hasOptionalInTail = Warning [reportw]
+    | otherwise         = Clean
+        where
+            reportf =
+                FailData "failure"
+                         "sequence will never terminate (repeat sequence only contains or favours optionals)"
+                         (position st)
+            reportw =
+                FailData "warning"
+                         "sequence may never terminate (contains optional sequence in a repeat sequence)"
+                         (position st)
+            opInRepeat = (isRepeatSeq && isOnlyOptionals) || opIsFirstInDef
+            opIsFirstInDef = isRepeatSeq && ((identifier . head . children . head $ children st) == "optional sequence")
+            {- Optional sequence is in  -}
+            isRepeatSeq = (identifier st) == "repeated sequence"
+            hasOptionalInTail = or
+                                . map (\a -> identifier a == "optional sequence")
+                                . tail' . children . head . children $ st
+            isOnlyOptionals = and
+                              . map (\a -> identifier a == "optional sequence")
+                              . children . head . children $ st
+
+tail' :: [a] -> [a]
+tail' [] = []
+tail' a = tail a

@@ -1,3 +1,4 @@
+a = ("a");
 letter = "A" | "B" | "C";
 word = letter, {letter};
 ws = " ", {" "};

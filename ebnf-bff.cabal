@@ -1,5 +1,5 @@
 name:                ebnf-bff
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            Parser combinators & EBNF, BFFs!
 description:         A library & program that builds parsers from ISO EBNF using Parsec
 license:             MIT
@@ -7,7 +7,7 @@ license-file:        LICENSE
 author:              Lokidottir
 maintainer:          ma302fh@gold.ac.uk
 -- copyright:
-category:            Text
+category:            Text, Metalanguage, EBNF, Parsing
 build-type:          Simple
 extra-source-files:  README.md
 cabal-version:       >=1.10

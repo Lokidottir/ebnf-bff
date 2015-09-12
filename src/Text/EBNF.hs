@@ -1,4 +1,4 @@
-module Text.EBNF where
+module Text.EBNF (syntax) where
 
 import Text.EBNF.Informal (syntax)
 

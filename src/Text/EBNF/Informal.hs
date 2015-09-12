@@ -141,10 +141,10 @@ syntacticPrimary :: Parser SyntaxTree
 syntacticPrimary = do
     pos <- getPosition
     blPre <- irrelevent
-    ch <- optionalSequence
+    ch <- groupedSequence
+      <|> optionalSequence
       <|> repeatedSequence
       <|> specialSequence
-      <|> groupedSequence
       <|> metaIdentifier
       <|> terminalString
       <|> emptySequence
@@ -219,7 +219,7 @@ metaIdentifier = do
 irrelevent :: Parser SyntaxTree
 irrelevent = do
     pos <- getPosition
-    ch <- many (comment <|> whitespaceST)
+    ch <- try $ many (comment <|> whitespaceST)
     return (SyntaxTree "irrelevent" "" pos ch)
 
 nullParser :: Parser SyntaxTree
@@ -230,7 +230,7 @@ nullParser = do
 comment :: Parser SyntaxTree
 comment = do
     pos <- getPosition
-    string "(*"
+    try $ string "(*"
     ch <- manyTill anyCharSW (try (string "*)"))
     return (SyntaxTree "comment" (concat ch) pos [])
 
@@ -266,8 +266,9 @@ escapedChar = char '\\' >> choice (zipWith escape codes replacements)
     where
         codes = "0abfnrtv\"&\'\\"
         replacements = "\0\a\b\f\n\r\t\v\"\&\'\\"
-        escape code replace = char code >> return replace
 
+escape :: Char -> Char -> Parser Char
+escape code replace = char code >> return replace
 
 tryRS :: Parser a -> Parser String
 tryRS par = do
