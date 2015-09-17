@@ -4,11 +4,13 @@ module Text.EBNF.SyntaxTree where
 -}
 import Text.EBNF.Helper
 import Text.Parsec.Pos
-import Data.List
+import Data.List as List
 import Data.Tuple
 import Data.Ord
+import Data.Maybe
 import Data.Aeson.Types
 import Data.Text (pack)
+import qualified Data.Foldable as Fold
 
 type Identifier = String
 type Content    = String
@@ -19,6 +21,18 @@ data SyntaxTree = SyntaxTree {
                  position   :: !SourcePos,
                  children   :: ![SyntaxTree]
                  } deriving (Show, Eq)
+
+flattenSyntaxTree :: SyntaxTree -> [SyntaxTree]
+flattenSyntaxTree st = st:flattened
+    where
+        flattened = concat . map flattenSyntaxTree . children $ st
+
+findST :: (SyntaxTree -> Bool) -> Maybe SyntaxTree
+findST p st | p st        = Just st
+            | isJust ch   = ch
+            | otherwise   = Nothing
+                where
+                    ch = find (\a -> isJust a) . map (findST p) $ children st
 
 instance Ord SyntaxTree where
     compare (SyntaxTree _ _ pos _) (SyntaxTree _ _ pos' _) = compare pos pos'

@@ -1,4 +1,7 @@
-module Text.EBNF.Build.Parser.Except where
+module Text.EBNF.Build.Parser.Except (FailData,
+                                      Report,
+                                      generateReport,
+                                      ) where
 
 import Text.Parsec.Pos
 import Text.EBNF.SyntaxTree
@@ -79,9 +82,9 @@ reporter fn st = let rep = fn st
 neverTerminating :: SyntaxTree -> Report
 neverTerminating (SyntaxTree _ _ _ []) = Clean
 neverTerminating st
-    | opInRepeat        = Failed [reportf]
-    | hasOptionalInTail = Warning [reportw]
-    | otherwise         = Clean
+    | opInRepeat st        = Failed [reportf]
+    | hasOptionalInTail st = Warning [reportw]
+    | otherwise            = Clean
         where
             reportf =
                 FailData "failure"
@@ -93,14 +96,17 @@ neverTerminating st
                          (position st)
             opInRepeat = (isRepeatSeq && isOnlyOptionals) || opIsFirstInDef
             opIsFirstInDef = isRepeatSeq && ((identifier . head . children . head $ children st) == "optional sequence")
-            {- Optional sequence is in  -}
+            {- Optional sequence is in a repeat sequence -}
             isRepeatSeq = (identifier st) == "repeated sequence"
             hasOptionalInTail = or
-                                . map (\a -> identifier a == "optional sequence")
+                                . map (\a -> identifier (sk a) == "optional sequence")
                                 . tail' . children . head . children $ st
             isOnlyOptionals = and
-                              . map (\a -> identifier a == "optional sequence")
+                              . map (\a -> identifier (sk a) == "optional sequence")
                               . children . head . children $ st
+            {- skip term -> factor -> primary -}
+            sk :: SyntaxTree -> SyntaxTree
+            sk st' = head . children . head . children . head . children $ st'
 
 tail' :: [a] -> [a]
 tail' [] = []
