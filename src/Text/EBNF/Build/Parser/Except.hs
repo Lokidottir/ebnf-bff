@@ -61,7 +61,7 @@ generateReport st = concatReports . map (($ st) . reporter) $ reports
 
 
 reports :: [SyntaxTree -> Report]
-reports = [neverTerminating]
+reports = [] -- [neverTerminating]
 
 reporter :: (SyntaxTree -> Report) -> SyntaxTree -> Report
 reporter fn st = let rep = fn st

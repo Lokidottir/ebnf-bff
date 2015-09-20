@@ -9,7 +9,8 @@ maintainer:          ma302fh@gold.ac.uk
 -- copyright:
 category:            Text, Metalanguage, EBNF, Parsing
 build-type:          Simple
-extra-source-files:  README.md
+extra-source-files:  README.md,
+                     changelog.md
 cabal-version:       >=1.10
 
 source-repository head
