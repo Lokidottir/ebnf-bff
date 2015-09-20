@@ -1,11 +1,9 @@
-module Text.EBNF.Build.Parser.Except (FailData,
-                                      Report,
-                                      generateReport,
-                                      ) where
+module Text.EBNF.Build.Parser.Except where
 
 import Text.Parsec.Pos
 import Text.EBNF.SyntaxTree
 import Text.EBNF.Helper
+import Data.Function
 import Data.List
 
 {-
@@ -21,7 +19,7 @@ data FailData = FailData {
 
 
 instance Show FailData where
-    show fd = concat [(failtype fd), " in " ,(show $ pos fd), ":\n", (description fd)]
+    show fd = concat [failtype fd, " in " , show $ pos fd, ":\n", description fd]
 
 
 data Report = Clean
@@ -31,12 +29,12 @@ data Report = Clean
 
 instance Show Report where
     show Clean       = "Clean Report"
-    show (Warning w) = concat . intersperse "\n" . map show $ w
-    show (Failed f)  = concat . intersperse "\n" . map show $ f
+    show (Warning w) = intercalate "\n" . map show $ w
+    show (Failed f)  = intercalate "\n" . map show $ f
 
 
 concatReports :: [Report] -> Report
-concatReports reps = foldl combineReports (Clean) reps
+concatReports = foldl combineReports Clean
 
 
 {-|
@@ -48,10 +46,10 @@ combineReports :: Report -> Report -> Report
 combineReports Clean Clean = Clean
 combineReports Clean a = a
 combineReports a Clean = combineReports Clean a
-combineReports (Warning w) (Failed f) = Failed (sortBy (\a b -> compare (pos a) (pos b)) $ f ++ w)
+combineReports (Warning w) (Failed f) = Failed (sortBy (compare `on` pos) $ f ++ w)
 combineReports (Failed f) (Warning w) = combineReports (Warning w) (Failed f)
-combineReports (Failed f) (Failed f')   = Failed (sortBy (\a b -> compare (pos a) (pos b)) $ f ++ f')
-combineReports (Warning w) (Warning w') = Warning (sortBy (\a b -> compare (pos a) (pos b)) $ w ++ w')
+combineReports (Failed f) (Failed f')   = Failed (sortBy (compare `on` pos) $ f ++ f')
+combineReports (Warning w) (Warning w') = Warning (sortBy (compare `on` pos) $ w ++ w')
 
 
 {-|
@@ -59,10 +57,10 @@ combineReports (Warning w) (Warning w') = Warning (sortBy (\a b -> compare (pos 
     together.
 -}
 generateReport :: SyntaxTree -> Report
-generateReport st = concatReports . map ($ st) . map reporter $ reports
+generateReport st = concatReports . map (($ st) . reporter) $ reports
 
 
-reports :: [(SyntaxTree -> Report)]
+reports :: [SyntaxTree -> Report]
 reports = [neverTerminating]
 
 reporter :: (SyntaxTree -> Report) -> SyntaxTree -> Report
@@ -82,8 +80,8 @@ reporter fn st = let rep = fn st
 neverTerminating :: SyntaxTree -> Report
 neverTerminating (SyntaxTree _ _ _ []) = Clean
 neverTerminating st
-    | opInRepeat st        = Failed [reportf]
-    | hasOptionalInTail st = Warning [reportw]
+    | opInRepeat        = Failed [reportf]
+    | hasOptionalInTail = Warning [reportw]
     | otherwise            = Clean
         where
             reportf =
@@ -97,16 +95,14 @@ neverTerminating st
             opInRepeat = (isRepeatSeq && isOnlyOptionals) || opIsFirstInDef
             opIsFirstInDef = isRepeatSeq && ((identifier . head . children . head $ children st) == "optional sequence")
             {- Optional sequence is in a repeat sequence -}
-            isRepeatSeq = (identifier st) == "repeated sequence"
-            hasOptionalInTail = or
-                                . map (\a -> identifier (sk a) == "optional sequence")
+            isRepeatSeq = identifier st == "repeated sequence"
+            hasOptionalInTail = any (\a -> identifier (sk a) == "optional sequence")
                                 . tail' . children . head . children $ st
-            isOnlyOptionals = and
-                              . map (\a -> identifier (sk a) == "optional sequence")
+            isOnlyOptionals = all (\a -> identifier (sk a) == "optional sequence")
                               . children . head . children $ st
             {- skip term -> factor -> primary -}
             sk :: SyntaxTree -> SyntaxTree
-            sk st' = head . children . head . children . head . children $ st'
+            sk st' = st'
 
 tail' :: [a] -> [a]
 tail' [] = []

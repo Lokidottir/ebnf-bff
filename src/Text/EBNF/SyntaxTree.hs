@@ -27,9 +27,9 @@ flattenSyntaxTree st = st:flattened
     where
         flattened = concat . map flattenSyntaxTree . children $ st
 
-findST :: (SyntaxTree -> Bool) -> Maybe SyntaxTree
+findST :: (SyntaxTree -> Bool) -> SyntaxTree -> Maybe SyntaxTree
 findST p st | p st        = Just st
-            | isJust ch   = ch
+            | isJust ch   = fromJust ch
             | otherwise   = Nothing
                 where
                     ch = find (\a -> isJust a) . map (findST p) $ children st

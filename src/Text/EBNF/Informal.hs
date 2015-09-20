@@ -24,7 +24,7 @@ strip str = reverse . strip' . reverse $ str
 strip' :: String -> String
 strip' str
     | str == "" = ""
-    | not . (\a -> elem a stripWSList) . head $ str = str
+    | not . (`elem` stripWSList) . head $ str = str
     | otherwise = strip' . tail $ str
 
 stripWSList = " \t\n\v\f"
@@ -75,12 +75,10 @@ definitionsList :: Parser SyntaxTree
 definitionsList = do
     pos <- getPosition
     defA <- singleDefinition
-    list <- many (do
+    list <- many $ do
         primST (string "|" <|> string "!" <|> string "/") "definition separator symbol"
-        defB <- singleDefinition
-        return defB
-        )
-    return (SyntaxTree "definitions list" "" pos (defA:list))
+        singleDefinition
+    return $ SyntaxTree "definitions list" "" pos (defA:list)
 
 singleDefinition :: Parser SyntaxTree
 singleDefinition = do
@@ -94,7 +92,7 @@ singleDefinition = do
         termInList <- syntacticTerm
         return [blInListA, concatSym, blInListB, termInList])
     blPost <- irrelevent
-    return (SyntaxTree "single definition" "" pos ([blPre, termA] ++ (concat list) ++ [blPost]))
+    return (SyntaxTree "single definition" "" pos ([blPre, termA] ++ concat list ++ [blPost]))
 
 syntacticTerm :: Parser SyntaxTree
 syntacticTerm = do
@@ -180,8 +178,8 @@ groupedSequence = do
 terminalString :: Parser SyntaxTree
 terminalString = do
     pos <- getPosition
-    termstr <- (quotedString '"') <|> (quotedString '\'')
-    return (SyntaxTree "terminal string" termstr pos [])
+    termstr <- quotedString '"' <|> quotedString '\''
+    return $ SyntaxTree "terminal string" termstr pos []
 
 specialSequence :: Parser SyntaxTree
 specialSequence = do
@@ -199,16 +197,16 @@ quotedString quoter = do
 escapedChar' :: Char -> Parser String
 escapedChar' c = do
     esc <- many (string "\\\\")
-    ch <- string (['\\', c])
-    return ((concat esc) ++ ch)
+    ch <- string ['\\', c]
+    return $ concat esc ++ ch
 
 metaIdentifier :: Parser SyntaxTree
 metaIdentifier = do
     pos <- getPosition
-    ident <- (do
+    ident <- do
         h <- letter <|> char '_'
-        t <- many (letter <|> space <|> digit <|> (char '_'))
-        return (h:t))
+        t <- many $ letter <|> space <|> digit <|> char '_'
+        return (h:t)
     return (SyntaxTree "meta identifier" (strip ident) pos [])
 
 
@@ -243,7 +241,7 @@ commentSymbol = do
 commentCharacterST :: Parser SyntaxTree
 commentCharacterST = do
     pos <- getPosition
-    ch <- manyTill anyChar (eofStr <|> (tryRS(string "*)")))
+    ch <- manyTill anyChar $ eofStr <|> tryRS (string "*)")
     return (SyntaxTree "comment character" ch pos [])
 
 whitespaceST :: Parser SyntaxTree
@@ -284,7 +282,7 @@ unescape :: String -> String
 unescape []       = []
 unescape [a]      = [a]
 unescape (a:b:xs) = let esc  = ("0abfnrtv\"&'\\", "\0\a\b\f\n\r\t\v\"\&\'\\")
-                        esc' = zip (fst esc) (snd esc)
-                    in if ((a == '\\') && (elem b . fst $ esc)) then
-                        (fromJust . lookup b $ esc'):(unescape xs)
-                        else a:(unescape (b:xs))
+                        esc' = uncurry zip esc
+                    in if (a == '\\') && (elem b . fst $ esc) then
+                        (fromJust . lookup b $ esc'):unescape xs
+                        else a:unescape (b:xs)
