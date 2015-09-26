@@ -19,7 +19,7 @@ import Data.Maybe
     of dependencies.
 -}
 strip :: String -> String
-strip str = reverse . strip' . reverse $ str
+strip = reverse . strip' . reverse
 
 strip' :: String -> String
 strip' str

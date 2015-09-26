@@ -7,21 +7,8 @@ import Data.List
 import Data.Maybe
 
 
-{-|
-    For each instance of a SyntaxTree with the identifier @raiseIdentifier@,
-    merge it's children with it's parent's children.
--}
-raise :: SyntaxTree -> SyntaxTree
-raise st = replaceChildren (sort $ ch ++ ch') st
-    where
-        parts = partition (\a -> identifier a == raiseIdentifier) (map raise . children $ st)
-        ch = map raise . snd $ parts
-        ch' = concatMap children . fst $ parts
+raise' = raise ((==) raiseIdentifier . identifier)
 
-{-|
-    The identifier for syntax trees that have no content and need
-    their children risen to the children of the syntax tree's parent.
--}
 raiseIdentifier = "&raise"
 
 {-|
@@ -72,7 +59,7 @@ buildSyntaxRule :: SyntaxTree -> Either String GrammarRule
 buildSyntaxRule st = if deflist /= nulltree then
                          Right $ GrammarRule rulename (\a -> do
                              st' <- deflistBuilt a
-                             return $ cleanup . raise . replaceIdentifier rulename $ st')
+                             return $ cleanup . raise' . replaceIdentifier rulename $ st')
                          else Left $ "error: could not find a definitions list at " ++ (show $ position st)
                              where
                                 {- The meta identifier of the rule that is being built -}
@@ -102,7 +89,7 @@ buildDefList st = \a -> do
     pos <- getPosition
     let deflist' = map (\b -> b a) deflist
     ch <- choice deflist'
-    return $ cleanup . raise $ SyntaxTree raiseIdentifier "" pos [ch]
+    return $ cleanup . raise' $ SyntaxTree raiseIdentifier "" pos [ch]
         where
             deflist = map buildSingleDef
                       . filter (\a -> identifier a == "single definition")

@@ -25,72 +25,72 @@ data SyntaxTree = SyntaxTree {
 flattenSyntaxTree :: SyntaxTree -> [SyntaxTree]
 flattenSyntaxTree st = st:flattened
     where
-        flattened = concat . map flattenSyntaxTree . children $ st
+        flattened = concatMap flattenSyntaxTree . children $ st
 
 findST :: (SyntaxTree -> Bool) -> SyntaxTree -> Maybe SyntaxTree
 findST p st | p st        = Just st
             | isJust ch   = fromJust ch
             | otherwise   = Nothing
                 where
-                    ch = find (\a -> isJust a) . map (findST p) $ children st
+                    ch = find isJust . map (findST p) $ children st
 
 instance Ord SyntaxTree where
     compare (SyntaxTree _ _ pos _) (SyntaxTree _ _ pos' _) = compare pos pos'
 
 instance ToJSON SyntaxTree where
-    toJSON (SyntaxTree i c p ch) = (object [(pack "identifier") .= i,
-                                            (pack "content")    .= c,
-                                            (pack "position")   .= (toJSON p),
-                                            (pack "children")   .= (map (toJSON) ch)])
+    toJSON (SyntaxTree i c p ch) = object [pack "identifier" .= i,
+                                            pack "content"   .= c,
+                                            pack "position"  .= toJSON p,
+                                            pack "children"  .= map toJSON ch]
 
 
 instance ToJSON SourcePos where
-    toJSON pos = (object [(pack "name") .= (sourceName pos),
-                          (pack "line") .= (sourceLine pos),
-                          (pack "col")  .= (sourceColumn pos)])
+    toJSON pos = object [pack "name" .= sourceName pos,
+                         pack "line" .= sourceLine pos,
+                         pack "col"  .= sourceColumn pos]
 {-|
     returns a syntax tree similar to the one passed but with
     the given identifier.
 -}
 replaceIdentifier :: Identifier -> SyntaxTree -> SyntaxTree
-replaceIdentifier i st = (SyntaxTree
-                         (i)
+replaceIdentifier i st = SyntaxTree
+                         i
                          (content st)
                          (position st)
-                         (children st))
+                         (children st)
 
 {-|
     returns a syntax tree similar to the one passed but with
     the given content.
 -}
 replaceContent :: Content -> SyntaxTree -> SyntaxTree
-replaceContent c st = (SyntaxTree
+replaceContent c st = SyntaxTree
                       (identifier st)
-                      (c)
+                      c
                       (position st)
-                      (children st))
+                      (children st)
 
 {-|
     returns a syntax tree similar to the one passed but with
     the given position.
 -}
 replacePosition :: SourcePos -> SyntaxTree -> SyntaxTree
-replacePosition p st = (SyntaxTree
+replacePosition p st = SyntaxTree
                        (identifier st)
                        (content st)
-                       (p)
-                       (children st))
+                       p
+                       (children st)
 
 {-|
     returns a syntax tree similar to the one passed but with
     the given children.
 -}
 replaceChildren :: [SyntaxTree] -> SyntaxTree -> SyntaxTree
-replaceChildren ch st = (SyntaxTree
+replaceChildren ch st = SyntaxTree
                         (identifier st)
                         (content st)
                         (position st)
-                        (ch))
+                        ch
 
 {-|
     inserts a syntax tree as a child, list is sorted by source code
@@ -100,7 +100,7 @@ insert :: SyntaxTree -> SyntaxTree -> SyntaxTree
 insert st st' = SyntaxTree (identifier st)
                            (content st)
                            (position st)
-                           (insertWhere (\a -> a > st') st' (children st))
+                           (insertWhere (> st') st' (children st))
 
 {-|
     removes any children of `st` that equal `st'`
@@ -109,7 +109,7 @@ remove :: SyntaxTree -> SyntaxTree -> SyntaxTree
 remove st st' = SyntaxTree (identifier st)
                            (content st)
                            (position st)
-                           (filter (\a -> a /= st') (children st))
+                           (filter (/= st') (children st))
 
 {-|
     the content of the syntax tree is merged with it's parent
@@ -117,10 +117,10 @@ remove st st' = SyntaxTree (identifier st)
 -}
 collapse :: (SyntaxTree -> Bool) -> SyntaxTree -> SyntaxTree
 collapse predicate (SyntaxTree i c p ch) =
-    (SyntaxTree i c' p ch')
+    SyntaxTree i c' p ch'
         where
             ch' = map (collapse predicate) ch
-            c' = concat (map content ch')
+            c' = concatMap content ch'
 
 {-|
     prune will remove any children of `tree` that satisfy `predicate`,
@@ -137,14 +137,21 @@ prune predicate (SyntaxTree i c p ch) =
     single-char base cases such as single letters as `_letters_ = ...`
 -}
 pruneUnderscored :: SyntaxTree -> SyntaxTree
-pruneUnderscored st = prune (\a -> ((head (identifier a)) == '_')) st
+pruneUnderscored = prune (\a -> head (identifier a) == '_')
 
-{-
-pruneIdentifier :: SyntaxTree -> Identifier -> SyntaxTree
-pruneIdentifier st identifier = prune (\s -> ) st
--}
 isTerminal :: SyntaxTree -> Bool
 isTerminal (SyntaxTree _ _ _ []) = True
-isTerminal (SyntaxTree _ _ _ _)  = False
+isTerminal SyntaxTree{}  = False
 
 nulltree = SyntaxTree "" "" (newPos "" 0 0) []
+
+{-|
+    For each instance of a SyntaxTree that matches a predicate,
+    merge it's children with it's parent's children.
+-}
+raise :: (SyntaxTree -> Bool) -> SyntaxTree -> SyntaxTree
+raise p st = replaceChildren (sort $ ch ++ ch') st
+    where
+        (a, b) = partition p (map (raise p) . children $ st)
+        ch = map (raise p) b
+        ch' = concatMap children a

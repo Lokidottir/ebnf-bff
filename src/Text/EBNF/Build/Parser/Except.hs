@@ -5,6 +5,7 @@ import Text.EBNF.SyntaxTree
 import Text.EBNF.Helper
 import Data.Function
 import Data.List
+import Data.Maybe
 
 {-
     A number of exception structures for reporting
@@ -29,8 +30,8 @@ data Report = Clean
 
 instance Show Report where
     show Clean       = "Clean Report"
-    show (Warning w) = intercalate "\n" . map show $ w
-    show (Failed f)  = intercalate "\n" . map show $ f
+    show (Warning w) = intercalate "\n\n" . map show $ w
+    show (Failed f)  = intercalate "\n\n" . map show $ f
 
 
 concatReports :: [Report] -> Report
@@ -61,7 +62,7 @@ generateReport st = concatReports . map (($ st) . reporter) $ reports
 
 
 reports :: [SyntaxTree -> Report]
-reports = [] -- [neverTerminating]
+reports = []
 
 reporter :: (SyntaxTree -> Report) -> SyntaxTree -> Report
 reporter fn st = let rep = fn st
@@ -79,31 +80,51 @@ reporter fn st = let rep = fn st
 -}
 neverTerminating :: SyntaxTree -> Report
 neverTerminating (SyntaxTree _ _ _ []) = Clean
-neverTerminating st
-    | opInRepeat        = Failed [reportf]
-    | hasOptionalInTail = Warning [reportw]
-    | otherwise            = Clean
+neverTerminating st@(SyntaxTree i c p ch)
+    | i /= "syntactic primary"     = Clean
+    | failTerminating $ raiseBk st = Failed [reportf]
+    | warnTerminating $ raiseBk st = Warning [reportw]
+    | otherwise                    = Clean
         where
             reportf =
-                FailData "failure"
+                FailData "Failure"
                          "sequence will never terminate (repeat sequence only contains or favours optionals)"
-                         (position st)
+                         p
             reportw =
-                FailData "warning"
+                FailData "Warning"
                          "sequence may never terminate (contains optional sequence in a repeat sequence)"
-                         (position st)
-            opInRepeat = (isRepeatSeq && isOnlyOptionals) || opIsFirstInDef
-            opIsFirstInDef = isRepeatSeq && ((identifier . head . children . head $ children st) == "optional sequence")
-            {- Optional sequence is in a repeat sequence -}
-            isRepeatSeq = identifier st == "repeated sequence"
-            hasOptionalInTail = any (\a -> identifier (sk a) == "optional sequence")
-                                . tail' . children . head . children $ st
-            isOnlyOptionals = all (\a -> identifier (sk a) == "optional sequence")
-                              . children . head . children $ st
-            {- skip term -> factor -> primary -}
-            sk :: SyntaxTree -> SyntaxTree
-            sk st' = st'
+                         p
 
-tail' :: [a] -> [a]
-tail' [] = []
-tail' a = tail a
+            failTerminating :: SyntaxTree -> Bool
+            warnTerminating st = (isRepeatSeq st && isOnlyOptionals st) || opIsFirstInDef st
+
+            warnTerminating :: SyntaxTree -> Bool
+            failTerminating st = isRepeatSeq st && hasOptionalInDeflist st
+
+            isRepeatSeq = (==) "repeat sequence" . identifier
+
+            hasOptionalInDeflist = any ((==) "optional sequence" . identifier) . children . sk
+
+            isOnlyOptionals = all ((==) "optional sequence" . identifier) . children . sk
+
+            opIsFirstInDef = (==) "optional sequence" . identifier . head . children . sk
+
+            {-|
+                Raise "bookeeping" nodes, the parts between deflists and (inclusive of)
+                syntactic primaries
+            -}
+            raiseBk :: SyntaxTree -> SyntaxTree
+            raiseBk = raise ((`elem` [
+                                      "definitions list",
+                                      "single definition",
+                                      "syntactic factor",
+                                      "syntactic primary",
+                                      "syntactic exception",
+                                      "syntactic term",
+                                      "integer"
+                                     ]) . identifier)
+
+            sk = fromMaybe nulltree . skId "definitions list"
+
+skId :: Identifier -> SyntaxTree -> Maybe SyntaxTree
+skId i = findST ((==) i . identifier)

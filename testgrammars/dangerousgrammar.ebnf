@@ -1,0 +1,9 @@
+(*
+    This grammar should throw some warnings & errors
+*)
+
+circular = circular; (* Fatal error - Absolute circular dependency *)
+infEmpty = { ["b"] }; (* Fatal error - will parse infinite empty strings *)
+infEmpty2 = { ["a"] | "b" }; (* Fatal error - will parse infinite empty strings *)
+
+maybeEmpty = { "a" | ["b"] }; (* Warning - may parse infinite empty strings *)
