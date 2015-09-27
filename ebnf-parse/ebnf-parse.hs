@@ -2,6 +2,7 @@ import Text.EBNF hiding (main)
 import Text.EBNF.Informal (syntax)
 import Text.EBNF.SyntaxTree
 import Text.EBNF.Helper
+import Data.EBNF.Trie
 import Text.EBNF.Build.Parser
 import Text.Parsec
 import Data.List
