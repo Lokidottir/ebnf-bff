@@ -8,3 +8,4 @@ dist
 cabal.sandbox.config
 *err
 out.json
+.stack-work

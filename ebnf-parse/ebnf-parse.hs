@@ -46,15 +46,15 @@ processArgs args
         putStrLn helptext
     | not . prelargs grammarArg $ args =
         -- no grammar specified
-        die "error: no grammar was provided (--grammar|-g=<filename>)"
+        System.Exit.die "error: no grammar was provided (--grammar|-g=<filename>)"
     | (not . prelargs primArgs $ args) &&
       (not . eleml ebnfastArgs $ args) =
         -- there is no primary rule and we're not outputting the EBNF AST
-        die "error: no primary rule provided (--primary-rule|-p=<rule>)"
+        System.Exit.die "error: no primary rule provided (--primary-rule|-p=<rule>)"
     | (not . eleml sourceArgs $ args) &&
       (not . eleml ebnfastArgs $ args) =
           -- there are no source files and we're not outputting the EBNF AST
-        die "error: no source files provided (--source-files|-s ...)"
+        System.Exit.die "error: no source files provided (--source-files|-s ...)"
     | not . prelargs outArgs $ args    =
         -- add default
         processArgs ("--output=stdout":args)
@@ -67,7 +67,7 @@ processArgs args
     -}
     | not . (`elem` formats)
           . getArgData formatArgs $ args =
-             die "error: format not supported (json|plaintext|xml)"
+             System.Exit.die "error: format not supported (json|plaintext|xml)"
     {-
         All arguments are present and all defaults are solved or
         provided by the user, this case is where the program is
@@ -95,7 +95,7 @@ main' args = do
                         otherwise -> showST
     let parserf gr fname fc =
                       case parse ((fromJust $ lookupGrammar primaryRule gr) gr) fname fc of
-                          Left err -> (die . show $ err) >> return ""
+                          Left err -> (System.Exit.die . show $ err) >> return ""
                           Right st -> return $ showPipe st
 
     {- pure section over -}
@@ -103,7 +103,7 @@ main' args = do
     grammarContent <- readFile grammarFile
     {- get grammar -}
     case parse syntax grammarFile grammarContent of
-        Left err -> die . show $ err
+        Left err -> System.Exit.die . show $ err
         Right st ->
             {-
                 grammar was successfully parsed, if the --export-ebnf-ast
@@ -148,7 +148,7 @@ pollSourcePaths paths =
                     sp' <- pollSourcePaths dircontent
                     sp <- pollSourcePaths t
                     return (sp' ++ sp))
-                (die ("error: '" ++ h ++ "' is not a file or directory") >> return [])))
+                (System.Exit.die ("error: '" ++ h ++ "' is not a file or directory") >> return [])))
 
 output :: String -> String -> IO()
 output "stdout" str = putStrLn str
