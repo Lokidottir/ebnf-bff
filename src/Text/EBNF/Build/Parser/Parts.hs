@@ -96,7 +96,7 @@ buildDefList st = \a -> do
                       . children $ st
 
 {-
-    A single definition is a concatinator seperated list ("a, b, c")
+    A single definition is a concatenator separated list ("a, b, c")
     rather than just a single parser as the name suggests, blame the
     writer for EBNF.
 -}
